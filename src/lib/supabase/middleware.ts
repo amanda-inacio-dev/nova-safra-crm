@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { shouldRedirectToLogin } from '@/lib/auth/access'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -23,17 +24,13 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // IMPORTANTE: não inserir código entre createServerClient e getUser()
+  // IMPORTANTE: não inserir código entre createServerClient e getUser().
+  // getUser() revalida o token (rejeita tokens inválidos/expirados).
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/cotacao') // portal público do cliente (issue-08)
-  ) {
+  if (shouldRedirectToLogin(request.nextUrl.pathname, Boolean(user))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
