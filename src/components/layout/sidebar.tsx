@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { label: 'Dashboard', href: '/' },
   { label: 'Clientes', href: '/clientes', roles: ['ADMIN', 'COMMERCIAL'] },
   { label: 'Usuários', href: '/admin/users', roles: ['ADMIN'] },
+  { label: 'Configurações', href: '/admin/configuracoes', roles: ['ADMIN'] },
 ]
 
 export function Sidebar({ role }: { role: UserRole }) {

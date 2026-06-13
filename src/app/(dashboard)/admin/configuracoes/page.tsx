@@ -1,0 +1,36 @@
+import { requireRole } from '@/lib/auth/require-role'
+import { createClient } from '@/lib/supabase/server'
+import { AdditionalsManager, type Additional } from './additionals-manager'
+import { PortsManager, type Port } from './ports-manager'
+import { CertificationsManager, type Certification } from './certifications-manager'
+import { SettingsForm, type AppSettings } from './settings-form'
+
+export default async function AdminConfigPage() {
+  await requireRole(['ADMIN'])
+
+  const supabase = await createClient()
+  const [additionals, ports, certifications, settings] = await Promise.all([
+    supabase.from('additionals').select('id, name, value, active').order('name'),
+    supabase.from('ports').select('id, name, active').order('name'),
+    supabase.from('certifications').select('id, name, image_url, active').order('name'),
+    supabase.from('app_settings').select('company_name, logo_url').eq('id', 1).single(),
+  ])
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">Configurações</h1>
+        <p className="mt-1 text-slate-500">
+          Listas de domínio usadas nas cotações e dados gerais da empresa.
+        </p>
+      </div>
+
+      <AdditionalsManager items={(additionals.data ?? []) as Additional[]} />
+      <PortsManager items={(ports.data ?? []) as Port[]} />
+      <CertificationsManager items={(certifications.data ?? []) as Certification[]} />
+      <SettingsForm
+        settings={(settings.data ?? { company_name: '', logo_url: null }) as AppSettings}
+      />
+    </div>
+  )
+}
