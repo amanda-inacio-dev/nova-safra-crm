@@ -4,6 +4,7 @@ import { requireRole } from '@/lib/auth/require-role'
 import { createClient } from '@/lib/supabase/server'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { NewClientModal } from './new-client-modal'
 
 type ClientRow = {
   id: string
@@ -12,6 +13,7 @@ type ClientRow = {
   cnpj: string | null
   email: string | null
   phone: string | null
+  notes: string | null
   logo_url: string | null
 }
 
@@ -27,7 +29,7 @@ export default async function ClientsPage({
   const supabase = await createClient()
   let query = supabase
     .from('clients')
-    .select('id, name, contact_name, cnpj, email, phone, logo_url')
+    .select('id, name, contact_name, cnpj, email, phone, notes, logo_url')
     .order('name', { ascending: true })
 
   if (search) {
@@ -44,9 +46,7 @@ export default async function ClientsPage({
           <h1 className="text-2xl font-semibold text-slate-900">Clientes</h1>
           <p className="mt-1 text-slate-500">Cadastro e gestão dos clientes da Nova Safra.</p>
         </div>
-        <Link href="/clientes/novo">
-          <Button>Novo cliente</Button>
-        </Link>
+        <NewClientModal />
       </div>
 
       <form method="get" className="flex gap-2">
@@ -79,13 +79,14 @@ export default async function ClientsPage({
               <th className="px-4 py-3">CNPJ</th>
               <th className="px-4 py-3">E-mail</th>
               <th className="px-4 py-3">Telefone</th>
+              <th className="px-4 py-3">Observações</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {clients.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">
                   {search
                     ? 'Nenhum cliente encontrado para a busca.'
                     : 'Nenhum cliente cadastrado ainda.'}
@@ -115,6 +116,12 @@ export default async function ClientsPage({
                   <td className="px-4 py-3 text-sm text-slate-600">{client.cnpj ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{client.email ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{client.phone ?? '—'}</td>
+                  <td
+                    className="max-w-[220px] truncate px-4 py-3 text-sm text-slate-600"
+                    title={client.notes ?? undefined}
+                  >
+                    {client.notes ?? '—'}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/clientes/${client.id}/editar`}

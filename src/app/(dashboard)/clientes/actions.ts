@@ -9,6 +9,7 @@ import { validateCnpj } from '@/lib/utils/cnpj'
 
 export type ClientActionState = {
   error?: string
+  ok?: boolean
 }
 
 const LOGO_BUCKET = 'client-logos'
@@ -20,6 +21,7 @@ type ClientFields = {
   cnpj: string | null
   email: string | null
   phone: string | null
+  notes: string | null
 }
 
 function parseFields(formData: FormData): { fields?: ClientFields; error?: string } {
@@ -28,6 +30,7 @@ function parseFields(formData: FormData): { fields?: ClientFields; error?: strin
   const cnpj = String(formData.get('cnpj') ?? '').trim()
   const email = String(formData.get('email') ?? '').trim()
   const phone = String(formData.get('phone') ?? '').trim()
+  const notes = String(formData.get('notes') ?? '').trim()
 
   if (!name) return { error: 'A razão social é obrigatória.' }
   if (cnpj && !validateCnpj(cnpj)) return { error: 'CNPJ inválido.' }
@@ -42,6 +45,7 @@ function parseFields(formData: FormData): { fields?: ClientFields; error?: strin
       cnpj: cnpj || null,
       email: email || null,
       phone: phone || null,
+      notes: notes || null,
     },
   }
 }
@@ -95,7 +99,7 @@ export async function createClientAction(
   if (dbError) return { error: 'Não foi possível salvar o cliente.' }
 
   revalidatePath('/clientes')
-  redirect('/clientes')
+  return { ok: true }
 }
 
 export async function updateClientAction(

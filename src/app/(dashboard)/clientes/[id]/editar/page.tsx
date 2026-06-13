@@ -11,7 +11,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
   const supabase = await createClient()
   const { data } = await supabase
     .from('clients')
-    .select('id, name, contact_name, cnpj, email, phone, logo_url')
+    .select('id, name, contact_name, cnpj, email, phone, notes, logo_url')
     .eq('id', id)
     .single()
 
@@ -20,7 +20,9 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold text-slate-900">Editar cliente</h1>
-      <ClientForm action={updateClientAction} initial={data as ClientInitial} />
+      <div className="max-w-2xl rounded-lg border border-slate-200 bg-white p-6">
+        <ClientForm action={updateClientAction} initial={data as ClientInitial} />
+      </div>
     </div>
   )
 }
