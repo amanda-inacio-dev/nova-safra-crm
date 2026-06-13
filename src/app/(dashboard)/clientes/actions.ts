@@ -16,6 +16,7 @@ const MAX_LOGO_BYTES = 5 * 1024 * 1024 // 5 MB
 
 type ClientFields = {
   name: string
+  contact_name: string | null
   cnpj: string | null
   email: string | null
   phone: string | null
@@ -23,6 +24,7 @@ type ClientFields = {
 
 function parseFields(formData: FormData): { fields?: ClientFields; error?: string } {
   const name = String(formData.get('name') ?? '').trim()
+  const contact_name = String(formData.get('contact_name') ?? '').trim()
   const cnpj = String(formData.get('cnpj') ?? '').trim()
   const email = String(formData.get('email') ?? '').trim()
   const phone = String(formData.get('phone') ?? '').trim()
@@ -36,6 +38,7 @@ function parseFields(formData: FormData): { fields?: ClientFields; error?: strin
   return {
     fields: {
       name,
+      contact_name: contact_name || null,
       cnpj: cnpj || null,
       email: email || null,
       phone: phone || null,

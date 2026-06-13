@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 type ClientRow = {
   id: string
   name: string
+  contact_name: string | null
   cnpj: string | null
   email: string | null
   phone: string | null
@@ -26,7 +27,7 @@ export default async function ClientsPage({
   const supabase = await createClient()
   let query = supabase
     .from('clients')
-    .select('id, name, cnpj, email, phone, logo_url')
+    .select('id, name, contact_name, cnpj, email, phone, logo_url')
     .order('name', { ascending: true })
 
   if (search) {
@@ -74,6 +75,7 @@ export default async function ClientsPage({
             <tr className="bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
               <th className="px-4 py-3">Logo</th>
               <th className="px-4 py-3">Razão social</th>
+              <th className="px-4 py-3">Contato</th>
               <th className="px-4 py-3">CNPJ</th>
               <th className="px-4 py-3">E-mail</th>
               <th className="px-4 py-3">Telefone</th>
@@ -83,7 +85,7 @@ export default async function ClientsPage({
           <tbody>
             {clients.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">
                   {search
                     ? 'Nenhum cliente encontrado para a busca.'
                     : 'Nenhum cliente cadastrado ainda.'}
@@ -109,6 +111,7 @@ export default async function ClientsPage({
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm font-medium text-slate-900">{client.name}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{client.contact_name ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{client.cnpj ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{client.email ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{client.phone ?? '—'}</td>

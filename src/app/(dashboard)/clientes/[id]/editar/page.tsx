@@ -11,7 +11,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
   const supabase = await createClient()
   const { data } = await supabase
     .from('clients')
-    .select('id, name, cnpj, email, phone, logo_url')
+    .select('id, name, contact_name, cnpj, email, phone, logo_url')
     .eq('id', id)
     .single()
 

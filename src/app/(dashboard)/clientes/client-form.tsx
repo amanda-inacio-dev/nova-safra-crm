@@ -14,6 +14,7 @@ import { formatCnpj } from '@/lib/utils/cnpj'
 export type ClientInitial = {
   id: string
   name: string
+  contact_name: string | null
   cnpj: string | null
   email: string | null
   phone: string | null
@@ -50,6 +51,16 @@ export function ClientForm({ action, initial }: { action: Action; initial?: Clie
           <div className="sm:col-span-2">
             <Label htmlFor="name">Razão social *</Label>
             <Input id="name" name="name" required defaultValue={initial?.name ?? ''} />
+          </div>
+
+          <div className="sm:col-span-2">
+            <Label htmlFor="contact_name">Contato</Label>
+            <Input
+              id="contact_name"
+              name="contact_name"
+              defaultValue={initial?.contact_name ?? ''}
+              placeholder="Nome da pessoa de contato"
+            />
           </div>
 
           <div>
