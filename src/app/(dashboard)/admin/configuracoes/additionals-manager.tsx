@@ -7,8 +7,11 @@ import {
   updateAdditional,
   toggleAdditional,
   type ConfigActionState,
+  type AdditionalInputType,
 } from './additionals-actions'
+import { SubtypesManager, type Subtype } from './subtypes-manager'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { FormMessage } from '@/components/ui/form-message'
 import { StatusBadge, ToggleActive, SaveButton } from './manager-bits'
@@ -16,11 +19,26 @@ import { StatusBadge, ToggleActive, SaveButton } from './manager-bits'
 export type Additional = {
   id: string
   name: string
-  value: number
+  input_type: AdditionalInputType
   active: boolean
+  subtypes: Subtype[]
 }
 
-const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const TYPE_HINT: Record<AdditionalInputType, string> = {
+  VALUE: 'No formulário: um campo de valor.',
+  SUBTYPES: 'No formulário: as opções abaixo, com um valor para cada marcada.',
+  OBSERVATION: 'No formulário: um campo de observação (texto livre), sem valor.',
+}
+
+function TypeOptions() {
+  return (
+    <>
+      <option value="VALUE">Valor (campo de valor)</option>
+      <option value="SUBTYPES">Subtipos (valor em cada)</option>
+      <option value="OBSERVATION">Observação (texto, sem valor)</option>
+    </>
+  )
+}
 
 function CreateButton() {
   const { pending } = useFormStatus()
@@ -31,34 +49,33 @@ function CreateButton() {
   )
 }
 
-function Row({ item }: { item: Additional }) {
+function Card({ item }: { item: Additional }) {
   const [state, formAction] = useActionState<ConfigActionState, FormData>(updateAdditional, {})
   return (
-    <tr className="border-t border-slate-100">
-      <td className="px-4 py-3" colSpan={2}>
-        <form action={formAction} className="flex flex-wrap items-center gap-2">
-          <input type="hidden" name="id" value={item.id} />
-          <Input name="name" defaultValue={item.name} className="h-9 w-56" aria-label="Nome" />
-          <Input
-            name="value"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={item.value}
-            className="h-9 w-32"
-            aria-label="Valor"
-          />
-          <SaveButton />
-          {state.error && <span className="text-xs text-red-600">{state.error}</span>}
-        </form>
-      </td>
-      <td className="px-4 py-3">
+    <div className="rounded-lg border border-slate-200 p-4">
+      <form action={formAction} className="flex flex-wrap items-center gap-2">
+        <input type="hidden" name="id" value={item.id} />
+        <Input name="name" defaultValue={item.name} className="h-9 w-64" aria-label="Nome" />
+        <Select
+          name="input_type"
+          defaultValue={item.input_type}
+          className="h-9 w-52"
+          aria-label="Comportamento"
+        >
+          <TypeOptions />
+        </Select>
+        <SaveButton />
         <StatusBadge active={item.active} />
-      </td>
-      <td className="px-4 py-3">
         <ToggleActive id={item.id} active={item.active} action={toggleAdditional} />
-      </td>
-    </tr>
+        {state.error && <span className="text-xs text-red-600">{state.error}</span>}
+      </form>
+
+      <p className="mt-2 text-xs text-slate-400">{TYPE_HINT[item.input_type]}</p>
+
+      {item.input_type === 'SUBTYPES' && (
+        <SubtypesManager additionalId={item.id} subtypes={item.subtypes} />
+      )}
+    </div>
   )
 }
 
@@ -74,7 +91,10 @@ export function AdditionalsManager({ items }: { items: Additional[] }) {
     <section className="rounded-lg border border-slate-200 bg-white">
       <div className="border-b border-slate-100 px-5 py-4">
         <h2 className="text-base font-semibold text-slate-900">Adicionais</h2>
-        <p className="text-sm text-slate-500">Custos extras (pedágio, escolta, seguro, etc.).</p>
+        <p className="text-sm text-slate-500">
+          Custos extras da cotação. O valor é informado no formulário; aqui você define apenas os
+          nomes e como cada um aparece.
+        </p>
       </div>
 
       <form
@@ -84,42 +104,25 @@ export function AdditionalsManager({ items }: { items: Additional[] }) {
       >
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-600">Nome</label>
-          <Input name="name" required placeholder="Ex.: Pedágio" className="w-56" />
+          <Input name="name" required placeholder="Ex.: Pedágio" className="w-64" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Valor (R$)</label>
-          <Input name="value" type="number" step="0.01" min="0" defaultValue="0" className="w-32" />
+          <label className="mb-1 block text-xs font-medium text-slate-600">Comportamento</label>
+          <Select name="input_type" defaultValue="VALUE" className="w-52">
+            <TypeOptions />
+          </Select>
         </div>
         <CreateButton />
         {state.error && <FormMessage type="error">{state.error}</FormMessage>}
       </form>
 
-      <table className="w-full">
-        <thead>
-          <tr className="text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-            <th className="px-4 py-2" colSpan={2}>
-              Nome / Valor
-            </th>
-            <th className="px-4 py-2">Status</th>
-            <th className="px-4 py-2">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.length === 0 ? (
-            <tr>
-              <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
-                Nenhum adicional cadastrado.
-              </td>
-            </tr>
-          ) : (
-            items.map((item) => <Row key={item.id} item={item} />)
-          )}
-        </tbody>
-      </table>
-      <p className="px-4 py-2 text-xs text-slate-400">
-        Total ativo:{' '}
-        {brl(items.filter((i) => i.active).reduce((sum, i) => sum + Number(i.value), 0))}
-      </p>
+      <div className="flex flex-col gap-3 p-5">
+        {items.length === 0 ? (
+          <p className="text-center text-sm text-slate-500">Nenhum adicional cadastrado.</p>
+        ) : (
+          items.map((item) => <Card key={item.id} item={item} />)
+        )}
+      </div>
     </section>
   )
 }

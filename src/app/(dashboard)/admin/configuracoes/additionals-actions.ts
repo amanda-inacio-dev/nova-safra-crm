@@ -9,14 +9,13 @@ export type ConfigActionState = {
   ok?: boolean
 }
 
-function parseValue(raw: FormDataEntryValue | null): number | null {
-  const n = Number(
-    String(raw ?? '')
-      .replace(',', '.')
-      .trim()
-  )
-  if (Number.isNaN(n) || n < 0) return null
-  return n
+export type AdditionalInputType = 'VALUE' | 'SUBTYPES' | 'OBSERVATION'
+
+const INPUT_TYPES: AdditionalInputType[] = ['VALUE', 'SUBTYPES', 'OBSERVATION']
+
+function parseInputType(raw: FormDataEntryValue | null): AdditionalInputType | null {
+  const v = String(raw ?? '')
+  return INPUT_TYPES.includes(v as AdditionalInputType) ? (v as AdditionalInputType) : null
 }
 
 export async function createAdditional(
@@ -26,12 +25,12 @@ export async function createAdditional(
   await requireRole(['ADMIN'])
 
   const name = String(formData.get('name') ?? '').trim()
-  const value = parseValue(formData.get('value'))
+  const inputType = parseInputType(formData.get('input_type'))
   if (!name) return { error: 'Informe o nome do adicional.' }
-  if (value === null) return { error: 'Valor inválido.' }
+  if (!inputType) return { error: 'Selecione um comportamento válido.' }
 
   const supabase = await createClient()
-  const { error } = await supabase.from('additionals').insert({ name, value })
+  const { error } = await supabase.from('additionals').insert({ name, input_type: inputType })
   if (error) return { error: 'Não foi possível criar o adicional.' }
 
   revalidatePath('/admin/configuracoes')
@@ -46,13 +45,16 @@ export async function updateAdditional(
 
   const id = String(formData.get('id') ?? '')
   const name = String(formData.get('name') ?? '').trim()
-  const value = parseValue(formData.get('value'))
+  const inputType = parseInputType(formData.get('input_type'))
   if (!id) return { error: 'Registro inválido.' }
   if (!name) return { error: 'Informe o nome do adicional.' }
-  if (value === null) return { error: 'Valor inválido.' }
+  if (!inputType) return { error: 'Selecione um comportamento válido.' }
 
   const supabase = await createClient()
-  const { error } = await supabase.from('additionals').update({ name, value }).eq('id', id)
+  const { error } = await supabase
+    .from('additionals')
+    .update({ name, input_type: inputType })
+    .eq('id', id)
   if (error) return { error: 'Não foi possível salvar.' }
 
   revalidatePath('/admin/configuracoes')
