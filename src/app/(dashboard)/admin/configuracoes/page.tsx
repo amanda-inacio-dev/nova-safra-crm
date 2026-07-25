@@ -13,7 +13,10 @@ export default async function AdminConfigPage() {
 
   const supabase = await createClient()
   const [additionals, subtypes, ports, certifications, settings] = await Promise.all([
-    supabase.from('additionals').select('id, name, input_type, active').order('name'),
+    supabase
+      .from('additionals')
+      .select('id, name, input_type, has_unit_basis, active')
+      .order('name'),
     supabase
       .from('additional_subtypes')
       .select('id, additional_id, name, active')

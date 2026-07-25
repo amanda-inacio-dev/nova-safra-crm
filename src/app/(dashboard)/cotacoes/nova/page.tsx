@@ -12,7 +12,11 @@ export default async function NewQuotationPage() {
   const [clients, ports, additionals, subtypes, certifications] = await Promise.all([
     supabase.from('clients').select('id, name').order('name'),
     supabase.from('ports').select('id, name').eq('active', true).order('name'),
-    supabase.from('additionals').select('id, name, input_type').eq('active', true).order('name'),
+    supabase
+      .from('additionals')
+      .select('id, name, input_type, has_unit_basis')
+      .eq('active', true)
+      .order('name'),
     supabase
       .from('additional_subtypes')
       .select('id, additional_id, name')

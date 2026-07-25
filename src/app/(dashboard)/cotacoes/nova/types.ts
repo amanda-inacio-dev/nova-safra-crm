@@ -7,7 +7,16 @@ export type AdditionalOption = {
   id: string
   name: string
   input_type: AdditionalInputType
+  has_unit_basis: boolean
   subtypes: { id: string; name: string }[]
+}
+
+/** Base do valor de um adicional (ex.: Estadia). */
+export type UnitBasis = 'POR_VEICULO' | 'POR_CONTAINER'
+
+export const UNIT_BASIS_LABEL: Record<UnitBasis, string> = {
+  POR_VEICULO: 'Por veículo',
+  POR_CONTAINER: 'Por container',
 }
 
 /** Converte texto de valor (aceita vírgula) em número. */

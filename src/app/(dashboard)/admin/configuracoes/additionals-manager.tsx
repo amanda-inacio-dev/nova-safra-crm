@@ -20,6 +20,7 @@ export type Additional = {
   id: string
   name: string
   input_type: AdditionalInputType
+  has_unit_basis: boolean
   active: boolean
   subtypes: Subtype[]
 }
@@ -28,6 +29,7 @@ const TYPE_HINT: Record<AdditionalInputType, string> = {
   VALUE: 'No formulário: um campo de valor.',
   SUBTYPES: 'No formulário: as opções abaixo, com um valor para cada marcada.',
   OBSERVATION: 'No formulário: um campo de observação (texto livre), sem valor.',
+  PERCENT: 'No formulário: uma alíquota (%) aplicada sobre o total (ex.: ICMS).',
 }
 
 function TypeOptions() {
@@ -36,6 +38,7 @@ function TypeOptions() {
       <option value="VALUE">Valor (campo de valor)</option>
       <option value="SUBTYPES">Subtipos (valor em cada)</option>
       <option value="OBSERVATION">Observação (texto, sem valor)</option>
+      <option value="PERCENT">Percentual (% sobre o total)</option>
     </>
   )
 }
@@ -64,6 +67,10 @@ function Card({ item }: { item: Additional }) {
         >
           <TypeOptions />
         </Select>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600">
+          <input type="checkbox" name="has_unit_basis" defaultChecked={item.has_unit_basis} />
+          Por veículo/container
+        </label>
         <SaveButton />
         <StatusBadge active={item.active} />
         <ToggleActive id={item.id} active={item.active} action={toggleAdditional} />
@@ -112,6 +119,10 @@ export function AdditionalsManager({ items }: { items: Additional[] }) {
             <TypeOptions />
           </Select>
         </div>
+        <label className="mb-2 flex items-center gap-1.5 text-xs text-slate-600">
+          <input type="checkbox" name="has_unit_basis" />
+          Por veículo/container
+        </label>
         <CreateButton />
         {state.error && <FormMessage type="error">{state.error}</FormMessage>}
       </form>

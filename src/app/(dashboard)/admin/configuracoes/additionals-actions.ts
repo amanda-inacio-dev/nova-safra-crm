@@ -9,9 +9,9 @@ export type ConfigActionState = {
   ok?: boolean
 }
 
-export type AdditionalInputType = 'VALUE' | 'SUBTYPES' | 'OBSERVATION'
+export type AdditionalInputType = 'VALUE' | 'SUBTYPES' | 'OBSERVATION' | 'PERCENT'
 
-const INPUT_TYPES: AdditionalInputType[] = ['VALUE', 'SUBTYPES', 'OBSERVATION']
+const INPUT_TYPES: AdditionalInputType[] = ['VALUE', 'SUBTYPES', 'OBSERVATION', 'PERCENT']
 
 function parseInputType(raw: FormDataEntryValue | null): AdditionalInputType | null {
   const v = String(raw ?? '')
@@ -26,11 +26,14 @@ export async function createAdditional(
 
   const name = String(formData.get('name') ?? '').trim()
   const inputType = parseInputType(formData.get('input_type'))
+  const hasUnitBasis = formData.get('has_unit_basis') === 'on'
   if (!name) return { error: 'Informe o nome do adicional.' }
   if (!inputType) return { error: 'Selecione um comportamento válido.' }
 
   const supabase = await createClient()
-  const { error } = await supabase.from('additionals').insert({ name, input_type: inputType })
+  const { error } = await supabase
+    .from('additionals')
+    .insert({ name, input_type: inputType, has_unit_basis: hasUnitBasis })
   if (error) return { error: 'Não foi possível criar o adicional.' }
 
   revalidatePath('/admin/configuracoes')
@@ -46,6 +49,7 @@ export async function updateAdditional(
   const id = String(formData.get('id') ?? '')
   const name = String(formData.get('name') ?? '').trim()
   const inputType = parseInputType(formData.get('input_type'))
+  const hasUnitBasis = formData.get('has_unit_basis') === 'on'
   if (!id) return { error: 'Registro inválido.' }
   if (!name) return { error: 'Informe o nome do adicional.' }
   if (!inputType) return { error: 'Selecione um comportamento válido.' }
@@ -53,7 +57,7 @@ export async function updateAdditional(
   const supabase = await createClient()
   const { error } = await supabase
     .from('additionals')
-    .update({ name, input_type: inputType })
+    .update({ name, input_type: inputType, has_unit_basis: hasUnitBasis })
     .eq('id', id)
   if (error) return { error: 'Não foi possível salvar.' }
 
