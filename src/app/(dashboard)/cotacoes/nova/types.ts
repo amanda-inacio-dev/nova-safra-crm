@@ -3,6 +3,8 @@ import type { AdditionalInputType } from '@/app/(dashboard)/admin/configuracoes/
 export type ClientOption = { id: string; name: string }
 export type PortOption = { id: string; name: string }
 export type CertOption = { id: string; name: string; image_url: string | null }
+/** Sugestão salva (Remetente/Destinatário/Origem/Destino) — não trava o campo, só sugere. */
+export type NameOption = { id: string; name: string }
 export type AdditionalOption = {
   id: string
   name: string

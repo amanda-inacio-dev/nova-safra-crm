@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeName, round2, calculateInsurance, grossUpWithIcms } from './estimate'
+import {
+  normalizeName,
+  round2,
+  suspendedTaxesAmount,
+  insuranceMerchandiseValue,
+  calculateInsurance,
+  grossUpWithIcms,
+} from './estimate'
 
 describe('normalizeName', () => {
   it('remove acentos e normaliza caixa/espaços', () => {
@@ -17,26 +24,42 @@ describe('round2', () => {
   })
 })
 
+describe('suspendedTaxesAmount', () => {
+  it('mercadoria × alíquota%', () => {
+    expect(suspendedTaxesAmount(100000, 20)).toBe(20000)
+    expect(suspendedTaxesAmount(100000, 0)).toBe(0)
+  })
+})
+
+describe('insuranceMerchandiseValue', () => {
+  it('mercadoria + impostos suspensos (% da mercadoria)', () => {
+    // 100000 + (100000 × 20%) = 120000
+    expect(insuranceMerchandiseValue(100000, 20)).toBe(120000)
+    // sem impostos suspensos = a própria mercadoria
+    expect(insuranceMerchandiseValue(100000, 0)).toBe(100000)
+  })
+})
+
 describe('calculateInsurance', () => {
-  it('(mercadoria + contêiner + suspensos) × taxa%', () => {
-    // (100000 + 5000 + 0) * 0.10% = 105
+  it('(mercadoria + contêiner) × taxa%, sem impostos suspensos', () => {
+    // (100000 + 5000) * 0.10% = 105
     expect(
       calculateInsurance({
         merchandiseValue: 100000,
+        suspendedTaxesRate: 0,
         containerBase: 5000,
-        suspendedTaxes: 0,
         ratePercent: 0.1,
       })
     ).toBe(105)
   })
 
-  it('inclui impostos suspensos quando informados (DTA)', () => {
-    // (100000 + 0 + 20000) * 0.15% = 180
+  it('impostos suspensos (%) elevam a mercadoria antes do cálculo (DTA)', () => {
+    // mercadoria p/ seguro = 100000 + 20% = 120000; (120000 + 0) * 0.15% = 180
     expect(
       calculateInsurance({
         merchandiseValue: 100000,
+        suspendedTaxesRate: 20,
         containerBase: 0,
-        suspendedTaxes: 20000,
         ratePercent: 0.15,
       })
     ).toBe(180)
@@ -46,8 +69,8 @@ describe('calculateInsurance', () => {
     expect(
       calculateInsurance({
         merchandiseValue: 100000,
+        suspendedTaxesRate: 20,
         containerBase: 5000,
-        suspendedTaxes: 0,
         ratePercent: 0,
       })
     ).toBe(0)

@@ -19,3 +19,14 @@ body {
   color: #0f172a;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Campos numéricos: apenas digitação (sem setas de aumentar/diminuir) */
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

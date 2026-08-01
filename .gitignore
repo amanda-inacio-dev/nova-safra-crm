@@ -44,6 +44,9 @@ Thumbs.db
 # vercel
 .vercel
 
+# claude code (configuração pessoal da máquina; a compartilhada é settings.json)
+.claude/settings.local.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

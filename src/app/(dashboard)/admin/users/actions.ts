@@ -54,7 +54,7 @@ export async function createUser(
   return { success: `Usuário ${name} criado com sucesso.` }
 }
 
-/** Atualiza nome e perfil de um usuário existente. Somente ADMIN. */
+/** Atualiza nome, e-mail e perfil de um usuário existente. Somente ADMIN. */
 export async function updateUser(
   _prev: UserActionState,
   formData: FormData
@@ -63,19 +63,65 @@ export async function updateUser(
 
   const id = String(formData.get('id') ?? '')
   const name = String(formData.get('name') ?? '').trim()
+  const email = String(formData.get('email') ?? '')
+    .trim()
+    .toLowerCase()
   const role = parseRole(formData.get('role'))
 
   if (!id) return { error: 'Usuário inválido.' }
   if (!name) return { error: 'O nome é obrigatório.' }
+  if (!email) return { error: 'O e-mail é obrigatório.' }
   if (!role) return { error: 'Selecione um perfil válido.' }
 
   const admin = createAdminClient()
-  const { error } = await admin.from('users').update({ name, role }).eq('id', id)
 
+  const { error: authError } = await admin.auth.admin.updateUserById(id, { email })
+  if (authError) {
+    if (authError.message.toLowerCase().includes('already')) {
+      return { error: 'Já existe um usuário com este e-mail.' }
+    }
+    return { error: 'Não foi possível atualizar o e-mail.' }
+  }
+
+  const { error } = await admin.from('users').update({ name, email, role }).eq('id', id)
   if (error) return { error: 'Não foi possível salvar as alterações.' }
 
   revalidatePath('/admin/users')
   return { success: 'Alterações salvas.' }
+}
+
+/**
+ * Define uma nova senha para o login de um usuário. Não é possível redefinir a
+ * senha de OUTRO administrador (só a própria) — evita que um admin assuma a
+ * conta de outro admin. Não existe forma de "ver" a senha atual — o Supabase
+ * (como qualquer sistema de login sério) só guarda a senha de forma criptografada,
+ * de mão única; a única ação possível é definir uma nova. Somente ADMIN.
+ */
+export async function resetUserPassword(
+  _prev: UserActionState,
+  formData: FormData
+): Promise<UserActionState> {
+  const currentAdmin = await requireRole(['ADMIN'])
+
+  const id = String(formData.get('id') ?? '')
+  const password = String(formData.get('password') ?? '')
+
+  if (!id) return { error: 'Usuário inválido.' }
+  if (password.length < 8) return { error: 'A senha deve ter pelo menos 8 caracteres.' }
+
+  const admin = createAdminClient()
+
+  if (id !== currentAdmin.id) {
+    const { data: target } = await admin.from('users').select('role').eq('id', id).maybeSingle()
+    if (target?.role === 'ADMIN') {
+      return { error: 'Não é possível redefinir a senha de outro administrador.' }
+    }
+  }
+
+  const { error } = await admin.auth.admin.updateUserById(id, { password })
+  if (error) return { error: 'Não foi possível redefinir a senha.' }
+
+  return { success: 'Senha redefinida com sucesso.' }
 }
 
 /**

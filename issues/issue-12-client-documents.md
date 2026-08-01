@@ -1,5 +1,14 @@
 # Issue #12 — Upload de documentos por cliente
 
+> ⏸️ **EM ESPERA — não implementar por enquanto** (decisão da usuária em 31/07/2026).
+> Nada desta issue foi construído. O escopo abaixo continua válido e pode ser
+> retomado a qualquer momento: nenhuma outra issue depende dela, e o restante do
+> sistema não referencia `client_documents` em lugar nenhum.
+> Ao retomar: só precisa da migration da tabela + bucket, e da tela dentro do
+> cadastro do cliente (`/clientes/[id]/editar`). O helper de upload de arquivo
+> não-imagem já existe (`src/lib/storage/upload-document.ts`, criado na issue #11
+> para o CT-e) e pode ser reaproveitado.
+
 **Tipo:** AFK  
 **Bloqueada por:** Issue #03
 

@@ -14,7 +14,12 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { label: 'Dashboard', href: '/' },
-  { label: 'Cotações', href: '/cotacoes', roles: ['ADMIN', 'COMMERCIAL'] },
+  { label: 'Cotações', href: '/cotacoes', roles: ['ADMIN', 'COMMERCIAL', 'OPERATION'] },
+  {
+    label: 'Cotações por cliente',
+    href: '/cotacoes/por-cliente',
+    roles: ['ADMIN', 'COMMERCIAL', 'OPERATION'],
+  },
   { label: 'Clientes', href: '/clientes', roles: ['ADMIN', 'COMMERCIAL'] },
   { label: 'Usuários', href: '/admin/users', roles: ['ADMIN'] },
   { label: 'Configurações', href: '/admin/configuracoes', roles: ['ADMIN'] },
@@ -24,6 +29,12 @@ export function Sidebar({ role }: { role: UserRole }) {
   const pathname = usePathname()
 
   const items = NAV.filter((item) => !item.roles || item.roles.includes(role))
+
+  // Marca só o item MAIS específico que casa com a URL atual — senão
+  // /cotacoes/por-cliente acenderia "Cotações" e "Cotações por cliente" juntos.
+  const activeHref = items
+    .filter((item) => (item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href
 
   return (
     <aside className="bg-brand-900 flex w-60 shrink-0 flex-col">
@@ -41,7 +52,7 @@ export function Sidebar({ role }: { role: UserRole }) {
 
       <nav className="flex flex-1 flex-col gap-1 px-3 py-2">
         {items.map((item) => {
-          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+          const active = item.href === activeHref
           return (
             <Link
               key={item.href}

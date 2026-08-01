@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth/require-role'
 import { createClient } from '@/lib/supabase/server'
 import { QuotationForm } from './quotation-form'
-import type { ClientOption, PortOption, CertOption, AdditionalOption } from './types'
+import type { ClientOption, PortOption, CertOption, AdditionalOption, NameOption } from './types'
 
 type SubtypeRow = { id: string; additional_id: string; name: string }
 
@@ -9,7 +9,17 @@ export default async function NewQuotationPage() {
   await requireRole(['ADMIN', 'COMMERCIAL'])
 
   const supabase = await createClient()
-  const [clients, ports, additionals, subtypes, certifications] = await Promise.all([
+  const [
+    clients,
+    ports,
+    additionals,
+    subtypes,
+    certifications,
+    senders,
+    recipients,
+    routeOrigins,
+    routeDestinations,
+  ] = await Promise.all([
     supabase.from('clients').select('id, name').order('name'),
     supabase.from('ports').select('id, name').eq('active', true).order('name'),
     supabase
@@ -23,6 +33,10 @@ export default async function NewQuotationPage() {
       .eq('active', true)
       .order('created_at'),
     supabase.from('certifications').select('id, name, image_url').eq('active', true).order('name'),
+    supabase.from('senders').select('id, name').eq('active', true).order('name'),
+    supabase.from('recipients').select('id, name').eq('active', true).order('name'),
+    supabase.from('route_origins').select('id, name').eq('active', true).order('name'),
+    supabase.from('route_destinations').select('id, name').eq('active', true).order('name'),
   ])
 
   const subtypeRows = (subtypes.data ?? []) as SubtypeRow[]
@@ -43,6 +57,10 @@ export default async function NewQuotationPage() {
         ports={(ports.data ?? []) as PortOption[]}
         additionals={additionalOptions}
         certifications={(certifications.data ?? []) as CertOption[]}
+        senders={(senders.data ?? []) as NameOption[]}
+        recipients={(recipients.data ?? []) as NameOption[]}
+        routeOrigins={(routeOrigins.data ?? []) as NameOption[]}
+        routeDestinations={(routeDestinations.data ?? []) as NameOption[]}
       />
     </div>
   )

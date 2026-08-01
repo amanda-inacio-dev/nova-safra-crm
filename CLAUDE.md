@@ -107,5 +107,5 @@ notifications { id, user_id, quotation_id, type, read, created_at }
 7. `issue-08` — Portal do cliente
 8. `issue-09` — Notificações / `issue-10` — Versionamento (paralelos)
 9. `issue-11` — Fluxo da operação
-10. `issue-12` — Documentos do cliente (pode rodar em paralelo com #05+)
-11. `issue-13` — Dashboard e listas
+10. `issue-13` — Dashboard e listas
+11. `issue-12` — Documentos do cliente — ⏸️ **EM ESPERA** (decisão da usuária em 31/07/2026; não implementar sem ela pedir)

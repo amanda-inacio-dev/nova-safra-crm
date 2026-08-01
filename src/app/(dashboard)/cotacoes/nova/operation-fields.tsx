@@ -79,7 +79,7 @@ export function OperationFields({
         </div>
       )}
 
-      {operationType === 'IMPORTACAO' && subtype === 'DTA' && (
+      {operationType === 'IMPORTACAO' && (subtype === 'DTA' || subtype === 'DTA_DI') && (
         <div>
           <Label htmlFor="op-detail">Detalhe da DTA *</Label>
           <Select

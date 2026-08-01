@@ -17,22 +17,36 @@ export function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100
 }
 
+/** Valor dos impostos suspensos = Mercadoria × alíquota% (0 quando não DTA). */
+export function suspendedTaxesAmount(merchandiseValue: number, ratePercent: number): number {
+  return round2(((Number(merchandiseValue) || 0) * (Number(ratePercent) || 0)) / 100)
+}
+
+/** Valor da mercadoria usado no seguro = Mercadoria + impostos suspensos. */
+export function insuranceMerchandiseValue(
+  merchandiseValue: number,
+  suspendedTaxesRate: number
+): number {
+  return round2(
+    (Number(merchandiseValue) || 0) + suspendedTaxesAmount(merchandiseValue, suspendedTaxesRate)
+  )
+}
+
 /**
  * Valor do seguro.
- *   Seguro = (Valor da Mercadoria + Base do Contêiner + Impostos Suspensos) × Taxa%
+ *   Mercadoria p/ seguro = Mercadoria + (Mercadoria × Impostos Suspensos%)
+ *   Seguro = (Mercadoria p/ seguro + Base do Contêiner) × Taxa%
  * Impostos suspensos só entram quando a operação é DTA (o chamador passa 0
  * quando não se aplica).
  */
 export function calculateInsurance(params: {
   merchandiseValue: number
+  suspendedTaxesRate: number
   containerBase: number
-  suspendedTaxes: number
   ratePercent: number
 }): number {
-  const base =
-    (Number(params.merchandiseValue) || 0) +
-    (Number(params.containerBase) || 0) +
-    (Number(params.suspendedTaxes) || 0)
+  const merch = insuranceMerchandiseValue(params.merchandiseValue, params.suspendedTaxesRate)
+  const base = merch + (Number(params.containerBase) || 0)
   return round2((base * (Number(params.ratePercent) || 0)) / 100)
 }
 

@@ -14,6 +14,19 @@ describe('validateOperation', () => {
     )
   })
 
+  it('aceita Importação > DTA+DI > Sobre rodas', () => {
+    expect(
+      validateOperation({ operationType: 'IMPORTACAO', subtype: 'DTA_DI', detail: 'SOBRE_RODAS' })
+        .ok
+    ).toBe(true)
+  })
+
+  it('rejeita DTA+DI sem detalhe da DTA', () => {
+    expect(
+      validateOperation({ operationType: 'IMPORTACAO', subtype: 'DTA_DI', detail: '' }).ok
+    ).toBe(false)
+  })
+
   it('aceita Importação > DI sem detalhe', () => {
     expect(validateOperation({ operationType: 'IMPORTACAO', subtype: 'DI', detail: '' }).ok).toBe(
       true

@@ -27,8 +27,8 @@ export default async function AdminUsersPage() {
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-              <th className="px-4 py-3">Nome / Perfil</th>
-              <th className="px-4 py-3">E-mail</th>
+              <th className="px-4 py-3">Nome / E-mail / Perfil</th>
+              <th className="px-4 py-3">Senha</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Ações</th>
             </tr>

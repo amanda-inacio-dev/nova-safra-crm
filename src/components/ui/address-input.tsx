@@ -56,9 +56,11 @@ type Props = {
   onChange: (value: string) => void
   placeholder?: string
   'aria-label'?: string
+  /** Id de um <datalist> com sugestões (ex.: origens/destinos salvos) — não trava o campo. */
+  list?: string
 }
 
-export function AddressInput({ value, onChange, placeholder, ...rest }: Props) {
+export function AddressInput({ value, onChange, placeholder, list, ...rest }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -96,6 +98,7 @@ export function AddressInput({ value, onChange, placeholder, ...rest }: Props) {
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       aria-label={rest['aria-label']}
+      list={list}
     />
   )
 }

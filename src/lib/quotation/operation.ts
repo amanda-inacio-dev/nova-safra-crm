@@ -1,7 +1,7 @@
 import type { OperationType } from '@/types'
 
 /** Subtipos por tipo de operação. */
-export const IMPORT_SUBTYPES = ['DTA', 'DI', 'OUTRO'] as const
+export const IMPORT_SUBTYPES = ['DTA', 'DI', 'DTA_DI', 'OUTRO'] as const
 export const EXPORT_SUBTYPES = ['DIRETA', 'COM_MAPA'] as const
 
 /** Detalhes do subtipo DTA (Importação). */
@@ -13,6 +13,7 @@ export type ExportSubtype = (typeof EXPORT_SUBTYPES)[number]
 export const OPERATION_LABELS: Record<string, string> = {
   DTA: 'DTA',
   DI: 'DI',
+  DTA_DI: 'DTA + DI',
   OUTRO: 'Outro',
   DIRETA: 'Operação direta',
   COM_MAPA: 'Operação com mapa',
@@ -31,6 +32,7 @@ export type OperationSelection = {
 /**
  * Valida a hierarquia de tipo de operação:
  *   Importação > DTA > (Baixa/Desova/Sobre rodas/Outros)
+ *   Importação > DTA+DI > (Baixa/Desova/Sobre rodas/Outros) — trechos agrupados em DTA/DI
  *   Importação > DI
  *   Importação > Outro (texto livre em detail)
  *   Exportação > Operação direta
@@ -41,9 +43,13 @@ export function validateOperation(sel: OperationSelection): { ok: boolean; error
 
   if (operationType === 'IMPORTACAO') {
     if (!IMPORT_SUBTYPES.includes(subtype as ImportSubtype)) {
-      return { ok: false, error: 'Selecione o subtipo da importação (DTA, DI ou Outro).' }
+      return { ok: false, error: 'Selecione o subtipo da importação (DTA, DI, DTA+DI ou Outro).' }
     }
-    if (subtype === 'DTA' && !DTA_DETAILS.includes(detail as (typeof DTA_DETAILS)[number])) {
+    // DTA+DI também exige o detalhe da DTA (Baixa/Desova/Sobre rodas/Outros).
+    if (
+      (subtype === 'DTA' || subtype === 'DTA_DI') &&
+      !DTA_DETAILS.includes(detail as (typeof DTA_DETAILS)[number])
+    ) {
       return { ok: false, error: 'Selecione o detalhe da DTA.' }
     }
     if (subtype === 'OUTRO' && !detail.trim()) {
