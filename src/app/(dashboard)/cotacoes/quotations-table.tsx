@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { QuotationRow } from './quotation-row'
 import { ClientResponseBadge } from './client-response-badge'
 import { statusDisplayLabel, statusColorClass } from '@/lib/quotation/status-label'
@@ -21,7 +22,8 @@ export function QuotationsTable({
   /** No histórico de um cliente, repetir o nome dele em toda linha é ruído. */
   hideClient?: boolean
 }) {
-  const columns = hideClient ? 9 : 10
+  // +1 da coluna de ações (Versões / Histórico)
+  const columns = (hideClient ? 9 : 10) + 1
 
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
@@ -38,6 +40,7 @@ export function QuotationsTable({
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Data</th>
             <th className="px-4 py-3">Responsável</th>
+            <th className="px-4 py-3">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -80,6 +83,29 @@ export function QuotationsTable({
                   {new Date(row.createdAt).toLocaleDateString('pt-BR')}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-600">{row.ownerName ?? '—'}</td>
+                {/* A linha inteira é clicável (abre a cotação); QuotationRow
+                    ignora o clique quando ele vem de um link, senão os dois
+                    navegariam ao mesmo tempo. "Versões" só aparece quando há
+                    mais de uma — e nunca para a Operação, que só acompanha a
+                    versão encaminhada a ela. */}
+                <td className="px-4 py-3 text-sm whitespace-nowrap">
+                  <div className="flex items-center gap-3">
+                    {!forOperation && row.version > 1 && (
+                      <Link
+                        href={`/cotacoes/${row.id}/versoes`}
+                        className="text-brand-700 hover:text-brand-800 font-medium"
+                      >
+                        Versões ({row.version})
+                      </Link>
+                    )}
+                    <Link
+                      href={`/cotacoes/${row.id}/historico`}
+                      className="font-medium text-slate-500 hover:text-slate-700"
+                    >
+                      Histórico
+                    </Link>
+                  </div>
+                </td>
               </QuotationRow>
             ))
           )}

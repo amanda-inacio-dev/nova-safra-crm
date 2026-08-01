@@ -17,106 +17,20 @@ import { type OperationUser } from '../operation-actions'
 import { ForwardToOperationModal } from './forward-to-operation-modal'
 import { OperationPanel } from './operation-panel'
 import {
-  STATUS_LABEL,
   statusDisplayLabel,
   statusColorClass,
   hasRevisionEvent,
 } from '@/lib/quotation/status-label'
-import type { QuotationStatus, QuotationEventType, UserRole } from '@/types'
+import {
+  VersionHistory,
+  QuotationHistory,
+  visibleEvents,
+  type QuotationEvent,
+  type VersionSummary,
+} from '../quotation-history'
+import type { QuotationStatus, UserRole } from '@/types'
 
-export type QuotationEvent = {
-  type: QuotationEventType
-  client_comment: string | null
-  created_at: string
-}
-
-export type VersionSummary = {
-  id: string
-  code: string | null
-  version: number
-  status: QuotationStatus
-}
-
-const EVENT_LABEL: Record<QuotationEventType, string> = {
-  APPROVED: 'Cliente aprovou a cotação',
-  REJECTED: 'Cliente reprovou a cotação',
-  COMMENTED: 'Cliente comentou',
-  FORWARDED: 'Encaminhada para a Operação',
-  REVISION_REQUESTED: 'Revisão solicitada',
-  CLOSED: 'Processo encerrado',
-}
-
-const EVENT_BADGE_CLASS: Record<QuotationEventType, string> = {
-  APPROVED: 'bg-emerald-50 text-emerald-700',
-  REJECTED: 'bg-red-50 text-red-700',
-  COMMENTED: 'bg-slate-100 text-slate-600',
-  FORWARDED: 'bg-brand-50 text-brand-700',
-  REVISION_REQUESTED: 'bg-amber-50 text-amber-700',
-  CLOSED: 'bg-emerald-50 text-emerald-700',
-}
-
-function VersionHistory({
-  versions,
-  currentId,
-}: {
-  versions: VersionSummary[]
-  currentId: string
-}) {
-  if (versions.length <= 1) return null
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="mb-3 text-sm font-semibold text-slate-800">Histórico de versões</p>
-      <div className="flex flex-col gap-2">
-        {versions.map((v) => (
-          <Link
-            key={v.id}
-            href={`/cotacoes/${v.id}/revisar`}
-            className={`flex items-center justify-between rounded-md border px-3 py-2 text-sm ${
-              v.id === currentId
-                ? 'border-brand-200 bg-brand-50 text-brand-800 font-medium'
-                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            <span>
-              v{v.version} — {v.code ?? '—'}
-            </span>
-            <span
-              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColorClass(v.status, false, false)}`}
-            >
-              {STATUS_LABEL[v.status]}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function QuotationHistory({ events }: { events: QuotationEvent[] }) {
-  if (events.length === 0) return null
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="mb-3 text-sm font-semibold text-slate-800">Histórico da cotação</p>
-      <div className="flex flex-col gap-3">
-        {events.map((e, i) => (
-          <div key={i} className="flex flex-col gap-1 border-l-2 border-slate-200 pl-3">
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_BADGE_CLASS[e.type]}`}
-              >
-                {EVENT_LABEL[e.type]}
-              </span>
-              <span className="text-xs text-slate-400">
-                {new Date(e.created_at).toLocaleString('pt-BR')}
-              </span>
-            </div>
-            {e.client_comment && <p className="text-sm text-slate-700">{e.client_comment}</p>}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+export type { QuotationEvent, VersionSummary }
 
 export function RevisarPdfPanel({
   quotationId,
@@ -387,9 +301,12 @@ export function RevisarPdfPanel({
 
       {error && <FormMessage type="error">{error}</FormMessage>}
 
-      <VersionHistory versions={versions} currentId={quotationId} />
+      {/* A Operação enxerga só a versão que foi encaminhada pra ela e o
+          histórico interno — nem as outras versões, nem a conversa do
+          Comercial com o cliente. */}
+      {!isOperation && <VersionHistory versions={versions} currentId={quotationId} />}
 
-      <QuotationHistory events={events} />
+      <QuotationHistory events={visibleEvents(events, isOperation)} />
 
       {pdfUrl ? (
         <iframe
