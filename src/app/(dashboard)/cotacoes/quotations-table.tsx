@@ -90,6 +90,14 @@ export function QuotationsTable({
                     versão encaminhada a ela. */}
                 <td className="px-4 py-3 text-sm whitespace-nowrap">
                   <div className="flex items-center gap-3">
+                    {row.status === 'CONCLUIDA' && (
+                      <Link
+                        href={`/cotacoes/${row.id}/ctes`}
+                        className="font-medium text-emerald-700 hover:text-emerald-800"
+                      >
+                        Ver CT-es
+                      </Link>
+                    )}
                     {!forOperation && row.version > 1 && (
                       <Link
                         href={`/cotacoes/${row.id}/versoes`}
