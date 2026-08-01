@@ -26,8 +26,13 @@ export async function generateQuotationPdf(
   let pdfBuffer: Buffer
   try {
     pdfBuffer = await htmlToPdfBuffer(renderQuotationHtml(data))
-  } catch {
-    return { error: 'Não foi possível gerar o PDF. Tente novamente.' }
+  } catch (e) {
+    // O motivo real vai pro log do servidor E pra tela: quem chega aqui já passou
+    // pelo requireRole acima (Admin/Comercial), e sem isso uma falha em produção
+    // vira adivinhação — foi exatamente o que aconteceu no 1º deploy.
+    const detail = e instanceof Error ? e.message : String(e)
+    console.error('[generateQuotationPdf] falha ao renderizar o PDF:', e)
+    return { error: `Não foi possível gerar o PDF: ${detail}` }
   }
 
   // Caminho único a cada geração (não só uma query string): um "?v=" na URL pode ser
@@ -39,7 +44,10 @@ export async function generateQuotationPdf(
   const { error: uploadError } = await admin.storage
     .from(PDF_BUCKET)
     .upload(path, pdfBuffer, { contentType: 'application/pdf', upsert: false })
-  if (uploadError) return { error: 'Não foi possível salvar o PDF gerado.' }
+  if (uploadError) {
+    console.error('[generateQuotationPdf] falha ao subir o PDF no Storage:', uploadError)
+    return { error: `Não foi possível salvar o PDF gerado: ${uploadError.message}` }
+  }
 
   const {
     data: { publicUrl },
@@ -50,7 +58,10 @@ export async function generateQuotationPdf(
     .from('quotations')
     .update({ pdf_url: publicUrl })
     .eq('id', quotationId)
-  if (updateError) return { error: 'PDF gerado, mas não foi possível vincular à cotação.' }
+  if (updateError) {
+    console.error('[generateQuotationPdf] falha ao vincular o PDF à cotação:', updateError)
+    return { error: `PDF gerado, mas não foi possível vincular à cotação: ${updateError.message}` }
+  }
 
   revalidatePath(`/cotacoes/${quotationId}/revisar`)
   return { url: publicUrl }
