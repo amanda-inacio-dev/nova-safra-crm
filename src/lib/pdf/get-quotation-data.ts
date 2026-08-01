@@ -77,8 +77,8 @@ export type QuotationPdfData = {
   generalSum: number
   /** legsTotal + generalSum. */
   grandTotal: number
-  /** Todos os adicionais (gerais e de trechos) com valor ou observação lançados — o
-   *  template filtra para mostrar só os que ficaram FORA do total ("se aplicáveis"). */
+  /** Adicionais gerais (todos os selecionados) + os de trecho com valor/observação.
+   *  O template mostra os que não somam no total ("Observações e adicionais"). */
   additionalLines: QuotationPdfAdditionalLine[]
   certifications: QuotationPdfCertification[]
   merchandiseValue: number
@@ -309,10 +309,13 @@ export async function getQuotationPdfData(quotationId: string): Promise<Quotatio
     total: grand.legSummaries[i].total,
   }))
 
-  // Linhas para a tabela "Adicionais (se aplicáveis)": gerais + por trecho, com observação —
-  // inclui itens só-observação (sem valor). O template filtra para mostrar só os NÃO incluídos.
+  // Linhas para "Observações e adicionais (se aplicáveis)": gerais + por trecho.
+  // TODO adicional geral selecionado entra aqui, inclusive os que não têm valor
+  // nenhum (Escolta, Prazo/Forma de pagamento…) e mesmo sem observação escrita —
+  // se a pessoa marcou na cotação, o cliente precisa ver. Só os do tipo percentual
+  // (ICMS) ficam de fora: eles pertencem ao cálculo de cada trecho.
   const generalAdditionalLines: QuotationPdfAdditionalLine[] = addRows
-    .filter((r) => r.percent == null && ((Number(r.value) || 0) !== 0 || r.observation))
+    .filter((r) => r.percent == null)
     .map((r) => ({
       label: r.custom_name
         ? r.custom_name

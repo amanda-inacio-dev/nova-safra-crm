@@ -114,20 +114,26 @@ function legCards(data: QuotationPdfData): string {
     .join('')
 }
 
-/** Só os adicionais com informação lançada mas que ficaram FORA da soma do total. */
+/**
+ * Tudo que NÃO soma no Total Estimado:
+ * - itens sem valor (Escolta, Prazo de pagamento, Forma de pagamento…), que por
+ *   definição nunca aparecem no resumo financeiro;
+ * - itens com valor que foram desmarcados da soma.
+ * Assim cada adicional aparece em exatamente um lugar do PDF, sem duplicar.
+ */
 function additionalsSection(data: QuotationPdfData): string {
-  const notApplied = data.additionalLines.filter((a) => !a.includeInTotal)
+  const notApplied = data.additionalLines.filter((a) => !a.includeInTotal || !a.value)
   if (notApplied.length === 0) return ''
   const rows = notApplied
     .map(
       (a) =>
         `<tr><td>${esc(a.label)}</td><td class="obs">${esc(a.observation || '—')}</td>` +
-        `<td class="num">${a.value != null ? brl(a.value) : '—'}</td></tr>`
+        `<td class="num">${a.value ? brl(a.value) : '—'}</td></tr>`
     )
     .join('')
   return `
     <div class="section">
-      <h2>Adicionais (se aplicáveis)</h2>
+      <h2>Observações e adicionais (se aplicáveis)</h2>
       <table>
         <thead><tr><th>Descrição</th><th>Observação</th><th class="num">Valor</th></tr></thead>
         <tbody>${rows}</tbody>
