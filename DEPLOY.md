@@ -1,5 +1,10 @@
 # Como colocar o sistema no ar (GitHub + Vercel)
 
+> ✅ **No ar desde 01/08/2026: https://nova-safra-crm.vercel.app**
+> Repositório: https://github.com/amanda-inacio-dev/nova-safra-crm (privado)
+> Os passos 1 a 7 já foram feitos. O guia fica aqui como referência — e a seção
+> "Depois: como publicar uma mudança", no fim, é a que você vai usar no dia a dia.
+
 Guia passo a passo. Faça na ordem — cada passo depende do anterior.
 
 > **Importante:** o sistema publicado vai usar **o mesmo banco Supabase** que você
@@ -86,8 +91,8 @@ O login usa links por e-mail (confirmação e redefinição de senha), e o Supab
 só aceita redirecionar para endereços autorizados.
 
 1. Supabase → seu projeto → **Authentication** → **URL Configuration**.
-2. **Site URL:** o endereço da Vercel.
-3. **Redirect URLs:** adicione `https://SEU-ENDERECO.vercel.app/**`
+2. **Site URL:** `https://nova-safra-crm.vercel.app`
+3. **Redirect URLs:** adicione `https://nova-safra-crm.vercel.app/**`
    (mantenha também `http://localhost:3000/**` para continuar desenvolvendo).
 
 ## Passo 8 — E-mails de verdade (opcional, quando quiser)
