@@ -1,5 +1,9 @@
 {
   "permissions": {
-    "allow": ["Bash(node -e ' *)"]
+    "allow": [
+      "Bash(node -e ' *)",
+      "PowerShell(npm run type-check 2>&1)",
+      "PowerShell(npx vitest run src/lib/email 2>&1)"
+    ]
   }
 }

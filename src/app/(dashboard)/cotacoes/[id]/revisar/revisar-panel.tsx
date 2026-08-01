@@ -236,7 +236,7 @@ export function RevisarPdfPanel({
                 disabled={generating}
                 variant={pdfUrl ? 'secondary' : 'primary'}
               >
-                {generating ? 'Gerando…' : pdfUrl ? 'Gerar novamente' : 'Gerar PDF'}
+                {generating ? 'Gerando…' : pdfUrl ? 'Gerar PDF novamente' : 'Gerar PDF'}
               </Button>
               <Link
                 href={`/cotacoes/${quotationId}/editar`}

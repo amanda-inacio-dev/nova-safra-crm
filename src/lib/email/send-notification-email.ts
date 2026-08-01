@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { escapeHtml as esc } from '@/lib/pdf/escape-html'
+import { textToEmailHtml } from './text-to-html'
 import type { NotificationType } from '@/types'
 
 const EVENT_COLOR: Record<NotificationType, string> = {
@@ -57,12 +58,12 @@ function buildNotificationHtml(params: {
   attachmentUrl?: string | null
 }): string {
   const { recipientName, companyName, type, comment, dashboardUrl, attachmentUrl } = params
-  const commentBlock = comment
+  // Texto colado nas tags de propósito — ver src/lib/email/text-to-html.ts.
+  const commentHtml = comment ? textToEmailHtml(comment) : ''
+  const commentBlock = commentHtml
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0;">
          <tr>
-           <td style="background:#f2f7f3; border-radius:6px; padding:14px 16px; font-size:14px; line-height:1.5; white-space:pre-wrap;">
-             “${esc(comment)}”
-           </td>
+           <td style="background:#f2f7f3; border-radius:6px; padding:14px 16px; font-size:14px; line-height:1.5;">“${commentHtml}”</td>
          </tr>
        </table>`
     : ''

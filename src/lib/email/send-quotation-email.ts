@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { escapeHtml as esc } from '@/lib/pdf/escape-html'
+import { textToEmailHtml } from './text-to-html'
 
 /** Monta o e-mail por concatenação de strings (mesmo motivo do template do PDF — ver
  *  src/lib/pdf/template.ts): evita JSX/react-dom em código alcançável por Server Action. */
@@ -21,12 +22,13 @@ function buildEmailHtml(params: {
     senderName,
     signatureUrl,
   } = params
-  const customMessageBlock = customMessage
+  // O texto vai colado nas tags de propósito: qualquer espaço/quebra de linha do
+  // código apareceria dentro da mensagem (ver src/lib/email/text-to-html.ts).
+  const messageHtml = customMessage ? textToEmailHtml(customMessage) : ''
+  const customMessageBlock = messageHtml
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
          <tr>
-           <td style="background:#e7f1ea; border-radius:6px; padding:14px 16px; font-size:14px; line-height:1.5; white-space:pre-wrap;">
-             ${esc(customMessage)}
-           </td>
+           <td style="background:#e7f1ea; border-radius:6px; padding:14px 16px; font-size:14px; line-height:1.5;">${messageHtml}</td>
          </tr>
        </table>`
     : ''

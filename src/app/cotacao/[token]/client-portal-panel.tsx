@@ -50,20 +50,10 @@ export function ClientPortalPanel({
     })
   }
 
+  // As ações vêm ANTES do documento: o cliente precisa ver o que pode fazer sem
+  // ter que rolar o PDF inteiro até o fim.
   return (
     <div className="mt-6 flex flex-col gap-4">
-      {pdfUrl ? (
-        <iframe
-          src={pdfUrl}
-          title="Cotação"
-          className="h-[70vh] w-full rounded-lg border border-slate-200 bg-slate-50"
-        />
-      ) : (
-        <div className="flex h-[30vh] items-center justify-center rounded-lg border border-dashed border-slate-300 text-sm text-slate-400">
-          O documento ainda não está disponível.
-        </div>
-      )}
-
       {error && <FormMessage type="error">{error}</FormMessage>}
 
       {alreadyResponded && (
@@ -120,6 +110,32 @@ export function ClientPortalPanel({
         </div>
         {commentSent && <p className="text-sm text-emerald-700">Comentário enviado.</p>}
       </div>
+
+      {pdfUrl ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-700">Documento da cotação</h2>
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-[#1f5c39] hover:underline"
+            >
+              Abrir em tela cheia ↗
+            </a>
+          </div>
+          {/* Bem alto de propósito: é o conteúdo principal da tela. */}
+          <iframe
+            src={pdfUrl}
+            title="Cotação"
+            className="h-[85vh] min-h-[600px] w-full rounded-lg border border-slate-200 bg-slate-50"
+          />
+        </div>
+      ) : (
+        <div className="flex h-[30vh] items-center justify-center rounded-lg border border-dashed border-slate-300 text-sm text-slate-400">
+          O documento ainda não está disponível.
+        </div>
+      )}
     </div>
   )
 }

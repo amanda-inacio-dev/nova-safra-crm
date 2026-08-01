@@ -31,7 +31,9 @@ export default async function ClientPortalPage({ params }: { params: Promise<{ t
 
   return (
     <div className="flex min-h-screen flex-1 flex-col items-center bg-gradient-to-br from-[#123822] to-[#1f5c39] px-4 py-10">
-      <div className="w-full max-w-3xl">
+      {/* Largura generosa: o PDF é o conteúdo principal desta tela e precisa
+          caber com folga para o cliente ler sem apertar os olhos. */}
+      <div className="w-full max-w-6xl">
         <div className="mb-6 flex flex-col items-center">
           <div className="rounded-xl bg-white p-3 shadow-lg">
             {settings?.logo_url ? (
@@ -55,7 +57,8 @@ export default async function ClientPortalPage({ params }: { params: Promise<{ t
             Cotação {q.code} — {companyName}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Olá, {q.client?.name ?? 'cliente'}! Confira o documento abaixo e registre sua resposta.
+            Olá, {q.client?.name ?? 'cliente'}! Registre sua resposta abaixo — o documento completo
+            está logo em seguida.
           </p>
 
           <ClientPortalPanel token={token} status={q.status} pdfUrl={q.pdf_url} />

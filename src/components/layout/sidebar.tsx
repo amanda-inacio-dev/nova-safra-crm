@@ -22,7 +22,9 @@ const NAV: NavItem[] = [
   },
   { label: 'Clientes', href: '/clientes', roles: ['ADMIN', 'COMMERCIAL'] },
   { label: 'Usuários', href: '/admin/users', roles: ['ADMIN'] },
-  { label: 'Configurações', href: '/admin/configuracoes', roles: ['ADMIN'] },
+  { label: 'Configurações da Cotação', href: '/admin/configuracoes', roles: ['ADMIN'] },
+  // Configurações da própria conta (senha) — todo perfil tem.
+  { label: 'Minha conta', href: '/configuracoes' },
 ]
 
 export function Sidebar({ role }: { role: UserRole }) {
