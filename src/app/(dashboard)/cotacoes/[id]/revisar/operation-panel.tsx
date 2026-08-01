@@ -1,11 +1,12 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { FormMessage } from '@/components/ui/form-message'
-import { requestRevision, closeQuotation } from '../operation-actions'
+import { requestRevision, closeQuotation, type CteAttachment } from '../operation-actions'
+import { CteAttachments } from './cte-attachments'
 import type { QuotationStatus } from '@/types'
 
 /** Ações da Operação: solicitar revisão ou encerrar com CT-e — só faz sentido
@@ -14,29 +15,45 @@ export function OperationPanel({
   quotationId,
   status,
   cteUrl,
+  ctes,
+  isDtaDi,
 }: {
   quotationId: string
   status: QuotationStatus
   cteUrl: string | null
+  ctes: CteAttachment[]
+  isDtaDi: boolean
 }) {
   const router = useRouter()
   const [revisionText, setRevisionText] = useState('')
   const [closeObservation, setCloseObservation] = useState('')
-  const [fileName, setFileName] = useState<string>()
   const [error, setError] = useState<string>()
   const [requesting, startRequesting] = useTransition()
   const [closing, startClosing] = useTransition()
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   if (status === 'CONCLUIDA') {
     return (
-      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-        <p className="font-medium">Processo encerrado.</p>
-        {cteUrl && (
-          <a href={cteUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block underline">
-            Ver CT-e
-          </a>
-        )}
+      <div className="flex flex-col gap-4">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          <p className="font-medium">Processo encerrado.</p>
+          {ctes.length === 0 && cteUrl && (
+            <a
+              href={cteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-block underline"
+            >
+              Ver CT-e
+            </a>
+          )}
+        </div>
+        {/* Depois de encerrada, os anexos ficam só para consulta. */}
+        <CteAttachments
+          quotationId={quotationId}
+          initial={ctes}
+          canEdit={false}
+          isDtaDi={isDtaDi}
+        />
       </div>
     )
   }
@@ -62,13 +79,9 @@ export function OperationPanel({
 
   function handleClose() {
     setError(undefined)
-    const file = fileInputRef.current?.files?.[0]
-    if (!file) {
-      setError('Envie o CT-e (PDF) para encerrar.')
-      return
-    }
+    // Os CT-es são anexados no bloco acima (podem ser vários) — encerrar só
+    // confirma; o servidor recusa se não houver nenhum anexado.
     const formData = new FormData()
-    formData.set('cte', file)
     formData.set('observation', closeObservation)
     startClosing(async () => {
       const res = await closeQuotation(quotationId, formData)
@@ -102,19 +115,13 @@ export function OperationPanel({
         </div>
       </div>
 
+      <CteAttachments quotationId={quotationId} initial={ctes} canEdit isDtaDi={isDtaDi} />
+
       <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4">
         <span className="text-sm font-medium text-slate-700">Encerrar processo</span>
-        <div>
-          <label className="mb-1 block text-xs text-slate-500">CT-e (PDF) *</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            onChange={(e) => setFileName(e.target.files?.[0]?.name)}
-            className="text-sm text-slate-600"
-          />
-          {fileName && <p className="mt-1 text-xs text-slate-400">{fileName}</p>}
-        </div>
+        <p className="text-xs text-slate-400">
+          Anexe os CT-es no bloco acima — é preciso pelo menos um para encerrar.
+        </p>
         <Textarea
           rows={2}
           value={closeObservation}

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { requireRole } from '@/lib/auth/require-role'
 import { createClient } from '@/lib/supabase/server'
 import { RevisarPdfPanel, type QuotationEvent, type VersionSummary } from './revisar-panel'
-import { getOperationUsers } from '../operation-actions'
+import { getOperationUsers, type CteAttachment } from '../operation-actions'
 import { clientEmailOptions, type ClientEmailOption } from '@/lib/quotation/client-emails'
 import type { QuotationStatus } from '@/types'
 
@@ -26,7 +26,7 @@ export default async function RevisarQuotationPage({
     supabase
       .from('quotations')
       .select(
-        'id, code, status, pdf_url, version, parent_id, cte_url, client_id, client:clients(name, contact_name, email)'
+        'id, code, status, pdf_url, version, parent_id, cte_url, client_id, operation_type, operation_subtype, client:clients(name, contact_name, email)'
       )
       .eq('id', id)
       .single(),
@@ -51,6 +51,16 @@ export default async function RevisarQuotationPage({
 
   const operationUsers =
     profile.role !== 'OPERATION' && data.status === 'APROVADA' ? await getOperationUsers() : []
+
+  // CT-es anexados (migration 0032). Se ela ainda não foi aplicada, a consulta
+  // falha e a tela abre sem a lista, em vez de quebrar.
+  const { data: ctesData } = await supabase
+    .from('quotation_ctes')
+    .select('id, file_url, file_name, leg_group, created_at')
+    .eq('quotation_id', id)
+    .order('created_at')
+  const ctes = (ctesData ?? []) as CteAttachment[]
+  const isDtaDi = data.operation_type === 'IMPORTACAO' && data.operation_subtype === 'DTA_DI'
 
   // Destinatários possíveis: contato principal + adicionais (migration 0028).
   // A Operação não envia cotação ao cliente, então nem carrega essa lista.
@@ -92,6 +102,8 @@ export default async function RevisarQuotationPage({
         cteUrl={data.cte_url}
         operationUsers={operationUsers}
         clientEmails={clientEmails}
+        ctes={ctes}
+        isDtaDi={isDtaDi}
       />
     </div>
   )

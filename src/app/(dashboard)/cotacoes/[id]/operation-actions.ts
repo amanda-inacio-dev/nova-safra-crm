@@ -162,16 +162,79 @@ export async function requestRevision(
   return {}
 }
 
-/** Encerra o processo: exige o CT-e (PDF), aceita observação opcional, status -> CONCLUIDA. */
+export type CteAttachment = {
+  id: string
+  file_url: string
+  file_name: string | null
+  leg_group: 'DTA' | 'DI' | null
+  created_at: string
+}
+
+/**
+ * Anexa mais um CT-e à cotação (migration 0032).
+ *
+ * Uma operação pode gerar vários CT-es; numa DTA+DI eles são de etapas
+ * diferentes, por isso o anexo pode ser marcado como DTA ou DI.
+ */
+export async function addCte(
+  quotationId: string,
+  formData: FormData
+): Promise<{ error?: string; cte?: CteAttachment }> {
+  const profile = await requireRole(['ADMIN', 'OPERATION'])
+
+  const file = formData.get('cte')
+  if (!(file instanceof File) || file.size === 0) return { error: 'Selecione o arquivo do CT-e.' }
+
+  const rawGroup = String(formData.get('leg_group') ?? '').trim()
+  const legGroup = rawGroup === 'DTA' || rawGroup === 'DI' ? rawGroup : null
+
+  const { url, error: uploadError } = await uploadDocument(CTE_BUCKET, file, `${quotationId}/`)
+  if (uploadError || !url) return { error: uploadError ?? 'Não foi possível enviar o CT-e.' }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('quotation_ctes')
+    .insert({
+      quotation_id: quotationId,
+      file_url: url,
+      file_name: file.name,
+      leg_group: legGroup,
+      uploaded_by: profile.id,
+    })
+    .select('id, file_url, file_name, leg_group, created_at')
+    .single()
+
+  if (error || !data) {
+    console.error('[addCte] falha ao salvar o anexo:', error)
+    return { error: 'Não foi possível salvar o CT-e.' }
+  }
+
+  revalidatePath(`/cotacoes/${quotationId}/revisar`)
+  return { cte: data as CteAttachment }
+}
+
+/** Remove um anexo — só quem enviou (ou um Admin), conforme a policy 0032. */
+export async function deleteCte(quotationId: string, cteId: string): Promise<{ error?: string }> {
+  await requireRole(['ADMIN', 'OPERATION'])
+
+  const supabase = await createClient()
+  const { error } = await supabase.from('quotation_ctes').delete().eq('id', cteId)
+  if (error) {
+    console.error('[deleteCte] falha ao remover o anexo:', error)
+    return { error: 'Não foi possível remover o CT-e.' }
+  }
+
+  revalidatePath(`/cotacoes/${quotationId}/revisar`)
+  return {}
+}
+
+/** Encerra o processo: exige pelo menos um CT-e anexado, status -> CONCLUIDA. */
 export async function closeQuotation(
   quotationId: string,
   formData: FormData
 ): Promise<{ error?: string }> {
   const profile = await requireRole(['ADMIN', 'OPERATION'])
 
-  const file = formData.get('cte')
-  if (!(file instanceof File) || file.size === 0)
-    return { error: 'Envie o CT-e (PDF) para encerrar.' }
   const observation = String(formData.get('observation') ?? '').trim()
 
   const supabase = await createClient()
@@ -185,12 +248,24 @@ export async function closeQuotation(
     return { error: 'Só é possível encerrar cotações encaminhadas.' }
   }
 
-  const { url, error: uploadError } = await uploadDocument(CTE_BUCKET, file, `${quotationId}/`)
-  if (uploadError || !url) return { error: uploadError ?? 'Não foi possível enviar o CT-e.' }
+  // Os CT-es agora são anexados antes (podem ser vários) — encerrar só confere
+  // se existe pelo menos um.
+  const { data: ctes } = await supabase
+    .from('quotation_ctes')
+    .select('file_url')
+    .eq('quotation_id', quotationId)
+    .order('created_at')
 
+  const attached = (ctes ?? []) as { file_url: string }[]
+  if (attached.length === 0) {
+    return { error: 'Anexe pelo menos um CT-e antes de encerrar.' }
+  }
+
+  // `cte_url` continua guardando o primeiro anexo: é o que as telas antigas e
+  // o e-mail de aviso usam como "o CT-e" da cotação.
   const { error: updateError } = await supabase
     .from('quotations')
-    .update({ status: 'CONCLUIDA', cte_url: url })
+    .update({ status: 'CONCLUIDA', cte_url: attached[0].file_url })
     .eq('id', quotationId)
   if (updateError) return { error: 'Não foi possível encerrar o processo.' }
 
@@ -222,7 +297,8 @@ export async function closeQuotation(
       companyName: settings?.company_name ?? 'Nova Safra Gestão Logística',
       type: 'QUOTATION_CLOSED',
       dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cotacoes/${quotationId}/revisar`,
-      attachmentUrl: url,
+      // O botão do e-mail leva ao primeiro CT-e; os demais ficam na tela da cotação.
+      attachmentUrl: attached[0].file_url,
     })
   }
 

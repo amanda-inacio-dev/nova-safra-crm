@@ -16,6 +16,8 @@ import { createNewVersion } from '../version-actions'
 import { type OperationUser } from '../operation-actions'
 import { ForwardToOperationModal } from './forward-to-operation-modal'
 import { OperationPanel } from './operation-panel'
+import { CteAttachments } from './cte-attachments'
+import type { CteAttachment } from '../operation-actions'
 import {
   statusDisplayLabel,
   statusColorClass,
@@ -45,6 +47,8 @@ export function RevisarPdfPanel({
   cteUrl,
   operationUsers,
   clientEmails,
+  ctes,
+  isDtaDi,
 }: {
   quotationId: string
   status: QuotationStatus
@@ -56,6 +60,10 @@ export function RevisarPdfPanel({
   role: UserRole
   cteUrl: string | null
   operationUsers: OperationUser[]
+  /** CT-es anexados (migration 0032) — varios por cotacao. */
+  ctes: CteAttachment[]
+  /** Importacao DTA+DI: cada CT-e precisa dizer de qual etapa e. */
+  isDtaDi: boolean
   /** Contatos do cliente que podem receber a cotação (principal + adicionais). */
   clientEmails: ClientEmailOption[]
 }) {
@@ -208,19 +216,30 @@ export function RevisarPdfPanel({
           />
 
           {status === 'CONCLUIDA' && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-              <p className="font-medium">Processo concluído pela Operação.</p>
-              {cteUrl && (
-                <a
-                  href={cteUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 inline-block underline"
-                >
-                  Ver CT-e
-                </a>
-              )}
-            </div>
+            <>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                <p className="font-medium">Processo concluído pela Operação.</p>
+                {/* Só mostra o link solto quando não há anexos listados abaixo
+                    (cotações encerradas antes da migration 0032). */}
+                {ctes.length === 0 && cteUrl && (
+                  <a
+                    href={cteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-block underline"
+                  >
+                    Ver CT-e
+                  </a>
+                )}
+              </div>
+              {/* O Comercial vê os CT-es, mas quem anexa/remove é a Operação. */}
+              <CteAttachments
+                quotationId={quotationId}
+                initial={ctes}
+                canEdit={false}
+                isDtaDi={isDtaDi}
+              />
+            </>
           )}
 
           {!isLatestVersion && (
@@ -356,7 +375,15 @@ export function RevisarPdfPanel({
         </>
       )}
 
-      {isOperation && <OperationPanel quotationId={quotationId} status={status} cteUrl={cteUrl} />}
+      {isOperation && (
+        <OperationPanel
+          quotationId={quotationId}
+          status={status}
+          cteUrl={cteUrl}
+          ctes={ctes}
+          isDtaDi={isDtaDi}
+        />
+      )}
 
       {error && <FormMessage type="error">{error}</FormMessage>}
 
