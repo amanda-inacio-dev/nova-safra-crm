@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { parseLocalDate } from '@/lib/dashboard/metrics'
 import { matchesKeyword, type QuotationListFilters } from '@/lib/quotation/list-filters'
 import { collapseVersions } from '@/lib/quotation/version'
+import { displayStatusKey } from '@/lib/quotation/status-label'
 import type { QuotationStatus, QuotationEventType } from '@/types'
 
 /**
@@ -88,13 +89,16 @@ export async function loadQuotationList(
 
   let query = supabase.from('quotations').select(SELECT).order('created_at', { ascending: false })
 
-  const clientId = options.clientId || filters.clientId
-  if (clientId) query = query.eq('client_id', clientId)
-  if (filters.status) query = query.eq('status', filters.status)
-  if (filters.operationType) query = query.eq('operation_type', filters.operationType)
-  if (filters.vehicleType) query = query.eq('vehicle_type', filters.vehicleType)
-  if (filters.segment) query = query.eq('segment', filters.segment)
-  if (filters.ownerId) query = query.eq('created_by', filters.ownerId)
+  // Filtros de igualdade vão pro banco (`in` = qualquer uma das opções marcadas).
+  // O de status fica de fora de propósito: o status EXIBIDO depende do histórico
+  // (Comentada / Revisão solicitada / Revisão enviada), então é aplicado depois.
+  if (options.clientId) query = query.eq('client_id', options.clientId)
+  else if (filters.clientIds.length) query = query.in('client_id', filters.clientIds)
+  if (filters.operationTypes.length) query = query.in('operation_type', filters.operationTypes)
+  if (filters.vehicleTypes.length) query = query.in('vehicle_type', filters.vehicleTypes)
+  if (filters.segments.length) query = query.in('segment', filters.segments)
+  if (filters.ownerIds.length) query = query.in('created_by', filters.ownerIds)
+  if (filters.senders.length) query = query.in('sender', filters.senders)
 
   const from = parseLocalDate(filters.from)
   if (from) query = query.gte('created_at', from.toISOString())
@@ -165,7 +169,7 @@ export async function loadQuotationList(
     }
   }
 
-  return filtered.map(({ row, origin, destination, route }) => ({
+  const rows = filtered.map(({ row, origin, destination, route }) => ({
     id: row.id,
     code: row.code,
     status: row.status,
@@ -185,18 +189,29 @@ export async function loadQuotationList(
     latestComment:
       row.status === 'AGUARDANDO_CLIENTE' ? (latestCommentByQuotation.get(row.id) ?? null) : null,
   }))
+
+  // O filtro de status usa o estado EXIBIDO (Comentada, Revisão solicitada…),
+  // que só existe depois de cruzar a cotação com o histórico dela — por isso
+  // vem aqui no fim, e não na consulta ao banco.
+  if (filters.statuses.length === 0) return rows
+  return rows.filter((row) =>
+    filters.statuses.includes(
+      displayStatusKey(row.status, row.hasBeenRevised, Boolean(row.latestComment))
+    )
+  )
 }
 
 export type FilterOption = { id: string; name: string }
 
-/** Opções dos selects de filtro (clientes e responsáveis cadastrados). */
+/** Opções dos filtros (clientes, responsáveis e remetentes já usados). */
 export async function loadFilterOptions(): Promise<{
   clients: FilterOption[]
   owners: FilterOption[]
+  senders: FilterOption[]
 }> {
   const supabase = await createClient()
 
-  const [clientsResult, ownersResult] = await Promise.all([
+  const [clientsResult, ownersResult, sendersResult] = await Promise.all([
     supabase.from('clients').select('id, name').order('name'),
     // Responsável = quem cria cotação (Admin/Comercial). Se a migration 0026
     // ainda não foi aplicada, a RLS devolve só o próprio usuário — a tela não
@@ -207,11 +222,27 @@ export async function loadFilterOptions(): Promise<{
       .in('role', ['ADMIN', 'COMMERCIAL'])
       .eq('active', true)
       .order('name'),
+    // Remetentes vêm das cotações existentes, não do catálogo do Admin: o campo
+    // aceita texto livre, então só assim as opções batem com o que dá pra achar.
+    supabase.from('quotations').select('sender').not('sender', 'is', null),
   ])
 
   const owners = ((ownersResult.data ?? []) as { id: string; name: string; email: string }[]).map(
     (u) => ({ id: u.id, name: u.name || u.email })
   )
 
-  return { clients: (clientsResult.data ?? []) as FilterOption[], owners }
+  const senderNames = [
+    ...new Set(
+      ((sendersResult.data ?? []) as { sender: string | null }[])
+        .map((r) => (r.sender ?? '').trim())
+        .filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+  return {
+    clients: (clientsResult.data ?? []) as FilterOption[],
+    owners,
+    // O valor do filtro é o próprio texto do remetente (não há id).
+    senders: senderNames.map((name) => ({ id: name, name })),
+  }
 }

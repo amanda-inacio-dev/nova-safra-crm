@@ -105,6 +105,7 @@ export default async function ClientQuotationHistoryPage({
         filters={filters}
         clients={options.clients}
         owners={options.owners}
+        senders={options.senders}
         forOperation={isOperation}
         lockedClient
       />

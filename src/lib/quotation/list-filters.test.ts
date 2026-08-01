@@ -28,17 +28,19 @@ describe('parseListFilters', () => {
       veiculo: 'RODOTREM',
       segmento: 'CAFE',
       responsavel: 'user-1',
+      remetente: 'Exportadora Café',
       de: '2026-01-01',
       ate: '2026-03-31',
     })
     expect(filters).toEqual({
       q: 'santos',
-      clientId: 'abc-123',
-      status: 'APROVADA',
-      operationType: 'IMPORTACAO',
-      vehicleType: 'RODOTREM',
-      segment: 'CAFE',
-      ownerId: 'user-1',
+      clientIds: ['abc-123'],
+      statuses: ['APROVADA'],
+      operationTypes: ['IMPORTACAO'],
+      vehicleTypes: ['RODOTREM'],
+      segments: ['CAFE'],
+      ownerIds: ['user-1'],
+      senders: ['Exportadora Café'],
       from: '2026-01-01',
       to: '2026-03-31',
     })
@@ -49,12 +51,23 @@ describe('parseListFilters', () => {
     expect(hasActiveFilters(parseListFilters({}))).toBe(false)
   })
 
-  it('usa o primeiro valor quando o parâmetro vem repetido', () => {
-    expect(parseListFilters({ status: ['APROVADA', 'REPROVADA'] }).status).toBe('APROVADA')
+  it('aceita várias opções do mesmo filtro (parâmetro repetido)', () => {
+    const filters = parseListFilters({
+      status: ['APROVADA', 'REPROVADA'],
+      segmento: ['CAFE', 'INDUSTRIA'],
+    })
+    expect(filters.statuses).toEqual(['APROVADA', 'REPROVADA'])
+    expect(filters.segments).toEqual(['CAFE', 'INDUSTRIA'])
+  })
+
+  it('descarta valores vazios que o formulário possa mandar', () => {
+    expect(parseListFilters({ cliente: ['', 'abc', '  '] }).clientIds).toEqual(['abc'])
   })
 
   it('hasActiveFilters true com qualquer campo preenchido', () => {
     expect(hasActiveFilters({ ...EMPTY_FILTERS, q: 'casul' })).toBe(true)
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, statuses: ['APROVADA'] })).toBe(true)
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, statuses: [] })).toBe(false)
   })
 })
 

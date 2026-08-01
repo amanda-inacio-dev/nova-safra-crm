@@ -1,48 +1,25 @@
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { STATUS_LABEL } from '@/lib/quotation/status-label'
+import {
+  displayStatusLabel,
+  STAFF_DISPLAY_STATUSES,
+  OPERATION_DISPLAY_STATUSES,
+} from '@/lib/quotation/status-label'
 import { OPERATION_TYPE_LABEL, SEGMENT_LABEL, VEHICLE_LABEL } from '@/lib/quotation/labels'
 import { hasActiveFilters, type QuotationListFilters } from '@/lib/quotation/list-filters'
+import { MultiSelectFilter } from './multi-select-filter'
 import type { FilterOption } from './list-data'
-import type { QuotationStatus } from '@/types'
 
 /**
  * Barra de filtros da lista mestra — um `<form method="get">` puro: cada
  * filtro vira querystring, então a URL filtrada pode ser copiada, salva nos
  * favoritos e recarregada sem depender de estado no cliente.
+ *
+ * Todos os filtros aceitam várias opções ao mesmo tempo (caixas de seleção).
  */
-
-const STAFF_STATUSES: QuotationStatus[] = [
-  'RASCUNHO',
-  'PRONTA',
-  'AGUARDANDO_CLIENTE',
-  'APROVADA',
-  'REPROVADA',
-  'ENCAMINHADA',
-  'CONCLUIDA',
-]
-
-/** A Operação só enxerga estes três (RLS) — e com os nomes dela. */
-const OPERATION_STATUS_LABEL: Partial<Record<QuotationStatus, string>> = {
-  ENCAMINHADA: 'Aberta',
-  APROVADA: 'Revisão solicitada',
-  CONCLUIDA: 'Concluída',
-}
-
-/**
- * Rótulo curto acima de cada filtro. Usa `<label>` puro, não o componente
- * `Label` do projeto: ele já traz text-sm/slate-700 fixos e o `cn()` daqui só
- * concatena classes (não é tailwind-merge), então o override não seria confiável.
- */
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-xs text-slate-500">{label}</span>
-      {children}
-    </label>
-  )
+function optionsFrom(map: Record<string, string>): FilterOption[] {
+  return Object.entries(map).map(([id, name]) => ({ id, name }))
 }
 
 export function QuotationFilters({
@@ -50,6 +27,7 @@ export function QuotationFilters({
   filters,
   clients,
   owners,
+  senders,
   forOperation,
   lockedClient = false,
 }: {
@@ -58,13 +36,14 @@ export function QuotationFilters({
   filters: QuotationListFilters
   clients: FilterOption[]
   owners: FilterOption[]
+  senders: FilterOption[]
   forOperation: boolean
   /** Histórico de um cliente específico: o filtro de cliente não faz sentido. */
   lockedClient?: boolean
 }) {
-  const statuses = forOperation
-    ? (Object.keys(OPERATION_STATUS_LABEL) as QuotationStatus[])
-    : STAFF_STATUSES
+  const statusOptions = (forOperation ? OPERATION_DISPLAY_STATUSES : STAFF_DISPLAY_STATUSES).map(
+    (key) => ({ id: key, name: displayStatusLabel(key, forOperation) })
+  )
 
   return (
     <form
@@ -94,80 +73,66 @@ export function QuotationFilters({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {!lockedClient && (
-          <Field label="Cliente">
-            <Select name="cliente" defaultValue={filters.clientId}>
-              <option value="">Todos</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          <MultiSelectFilter
+            name="cliente"
+            label="Cliente"
+            options={clients}
+            selected={filters.clientIds}
+          />
         )}
 
-        <Field label="Status">
-          <Select name="status" defaultValue={filters.status}>
-            <option value="">Todos</option>
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {forOperation ? OPERATION_STATUS_LABEL[status] : STATUS_LABEL[status]}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <MultiSelectFilter
+          name="status"
+          label="Status"
+          options={statusOptions}
+          selected={filters.statuses}
+        />
 
-        <Field label="Tipo de operação">
-          <Select name="operacao" defaultValue={filters.operationType}>
-            <option value="">Todos</option>
-            {Object.entries(OPERATION_TYPE_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <MultiSelectFilter
+          name="operacao"
+          label="Tipo de operação"
+          options={optionsFrom(OPERATION_TYPE_LABEL)}
+          selected={filters.operationTypes}
+        />
 
-        <Field label="Veículo">
-          <Select name="veiculo" defaultValue={filters.vehicleType}>
-            <option value="">Todos</option>
-            {Object.entries(VEHICLE_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <MultiSelectFilter
+          name="veiculo"
+          label="Veículo"
+          options={optionsFrom(VEHICLE_LABEL)}
+          selected={filters.vehicleTypes}
+        />
 
-        <Field label="Segmento">
-          <Select name="segmento" defaultValue={filters.segment}>
-            <option value="">Todos</option>
-            {Object.entries(SEGMENT_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <MultiSelectFilter
+          name="segmento"
+          label="Segmento"
+          options={optionsFrom(SEGMENT_LABEL)}
+          selected={filters.segments}
+        />
 
-        <Field label="Responsável">
-          <Select name="responsavel" defaultValue={filters.ownerId}>
-            <option value="">Todos</option>
-            {owners.map((owner) => (
-              <option key={owner.id} value={owner.id}>
-                {owner.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <MultiSelectFilter
+          name="responsavel"
+          label="Responsável"
+          options={owners}
+          selected={filters.ownerIds}
+        />
 
-        <Field label="De">
-          <Input type="date" name="de" defaultValue={filters.from} />
-        </Field>
+        <MultiSelectFilter
+          name="remetente"
+          label="Remetente"
+          options={senders}
+          selected={filters.senders}
+        />
 
-        <Field label="Até">
-          <Input type="date" name="ate" defaultValue={filters.to} />
-        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-slate-500">De</span>
+            <Input type="date" name="de" defaultValue={filters.from} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-slate-500">Até</span>
+            <Input type="date" name="ate" defaultValue={filters.to} />
+          </label>
+        </div>
       </div>
     </form>
   )
