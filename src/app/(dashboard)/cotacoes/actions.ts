@@ -230,7 +230,9 @@ async function saveChildren(
   }
 
   if (generalAdditionals.length > 0) {
-    const addRows = generalAdditionals.map((a) => ({
+    // `sort_order` guarda a ordem escolhida no formulário (migration 0031) —
+    // é ela que manda no PDF. O índice do array já vem na ordem certa.
+    const addRows = generalAdditionals.map((a, index) => ({
       quotation_id: quotationId,
       additional_id: a.additionalId || null,
       custom_name: a.customName?.trim() || null,
@@ -240,6 +242,7 @@ async function saveChildren(
       value: a.value ?? null,
       observation: a.observation?.trim() || null,
       include_in_total: a.includeInTotal ?? true,
+      sort_order: index,
     }))
     const { error: addError } = await supabase.from('quotation_additionals').insert(addRows)
     if (addError) return 'Não foi possível salvar os adicionais.'

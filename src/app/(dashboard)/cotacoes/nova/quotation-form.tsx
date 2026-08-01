@@ -12,6 +12,7 @@ import { createQuotation, updateQuotation, type QuotationAdditionalInput } from 
 import { OperationFields, type OperationValue } from './operation-fields'
 import { LegsEditor, emptyLeg, type LegRow } from './legs-editor'
 import { AdditionalsSelector } from './additionals-selector'
+import { AdditionalsOrder } from './additionals-order'
 import { CertificationsSelector } from './certifications-selector'
 import {
   type ClientOption,
@@ -66,6 +67,11 @@ export type QuotationInitial = {
   insuranceIncluded: boolean
   /** Seleção de quais adicionais gerais entram na soma. */
   includeMap: Record<string, boolean>
+}
+
+/** Identifica uma seleção de adicional para guardar a ordem escolhida. */
+function selectionKey(s: QuotationAdditionalInput): string {
+  return [s.additionalId ?? '', s.subtypeId ?? '', s.customName ?? ''].join('|')
 }
 
 export function QuotationForm({
@@ -124,9 +130,39 @@ export function QuotationForm({
   const showLegGroups = operation.operationType === 'IMPORTACAO' && operation.subtype === 'DTA_DI'
 
   // Adicionais gerais (Estadia, Handling etc. — as margens esquerda ficam por trecho) / certificações
-  const [addSelections, setAddSelections] = useState<QuotationAdditionalInput[]>(
+  //
+  // A ordem é do usuário, não do catálogo: o seletor devolve a lista sempre na
+  // mesma sequência, então guardamos à parte a ordem escolhida (por chave) e
+  // reconstruímos a lista a partir dela. É essa lista ordenada que é salva e
+  // vira a ordem dos adicionais no PDF.
+  const [rawSelections, setRawSelections] = useState<QuotationAdditionalInput[]>(
     initial?.additionals ?? []
   )
+  const [selectionOrder, setSelectionOrder] = useState<string[]>(() =>
+    (initial?.additionals ?? []).map(selectionKey)
+  )
+
+  function setAddSelections(next: QuotationAdditionalInput[]) {
+    setRawSelections(next)
+    setSelectionOrder((prev) => {
+      const keys = next.map(selectionKey)
+      const kept = prev.filter((k) => keys.includes(k))
+      // Adicional marcado agora entra no fim da ordem.
+      return [...kept, ...keys.filter((k) => !kept.includes(k))]
+    })
+  }
+
+  const addSelections = useMemo(() => {
+    // Consome de um "monte" em vez de indexar por chave: se houver duas linhas
+    // com a mesma chave (dois adicionais manuais de mesmo nome), nenhuma some.
+    const pool = [...rawSelections]
+    const ordered: QuotationAdditionalInput[] = []
+    for (const key of selectionOrder) {
+      const index = pool.findIndex((s) => selectionKey(s) === key)
+      if (index >= 0) ordered.push(...pool.splice(index, 1))
+    }
+    return [...ordered, ...pool]
+  }, [rawSelections, selectionOrder])
   // Cotação nova já nasce com TODAS as certificações marcadas — o normal é
   // exibi-las no PDF; desmarcar é a exceção. Ao editar, vale o que foi salvo
   // (senão desmarcar uma seria desfeito na próxima abertura da tela).
@@ -410,6 +446,14 @@ export function QuotationForm({
           additionals={additionals}
           initial={initial?.additionals}
           onChange={setAddSelections}
+        />
+      </Section>
+
+      <Section title="Ordem dos adicionais no PDF">
+        <AdditionalsOrder
+          selections={addSelections}
+          additionals={additionals}
+          onChange={(next) => setSelectionOrder(next.map(selectionKey))}
         />
       </Section>
 

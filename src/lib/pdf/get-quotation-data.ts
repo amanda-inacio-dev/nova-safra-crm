@@ -176,9 +176,11 @@ export async function getQuotationPdfData(quotationId: string): Promise<Quotatio
     supabase
       .from('quotation_additionals')
       .select(
-        'additional_id, custom_name, subtype_id, percent, value, observation, include_in_total, additional:additionals(name)'
+        'additional_id, custom_name, subtype_id, percent, value, observation, include_in_total, sort_order, additional:additionals(name)'
       )
-      .eq('quotation_id', quotationId),
+      .eq('quotation_id', quotationId)
+      // Ordem escolhida no formulário (migration 0031) — é ela que manda no PDF.
+      .order('sort_order'),
     supabase
       .from('quotation_certifications')
       .select('certification:certifications(name, image_url)')

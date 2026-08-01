@@ -113,7 +113,9 @@ export default async function EditQuotationPage({ params }: { params: Promise<{ 
       .select(
         'additional_id, custom_name, subtype_id, unit_basis, percent, value, observation, include_in_total'
       )
-      .eq('quotation_id', id),
+      .eq('quotation_id', id)
+      // Reabre o formulário na ordem que a pessoa deixou salva (migration 0031).
+      .order('sort_order'),
     supabase.from('quotation_certifications').select('certification_id').eq('quotation_id', id),
     supabase.from('clients').select('id, name').order('name'),
     supabase.from('ports').select('id, name').eq('active', true).order('name'),
