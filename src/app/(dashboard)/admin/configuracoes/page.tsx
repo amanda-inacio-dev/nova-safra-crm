@@ -8,6 +8,7 @@ import { SettingsForm, type AppSettings } from './settings-form'
 import { SimpleCatalogManager, type CatalogItem } from './simple-catalog-manager'
 
 type SubtypeRow = Subtype & { additional_id: string }
+type PresetRow = { id: string; additional_id: string; text: string }
 
 export default async function AdminConfigPage() {
   await requireRole(['ADMIN'])
@@ -23,6 +24,7 @@ export default async function AdminConfigPage() {
     recipients,
     routeOrigins,
     routeDestinations,
+    presets,
   ] = await Promise.all([
     supabase
       .from('additionals')
@@ -39,16 +41,23 @@ export default async function AdminConfigPage() {
     supabase.from('recipients').select('id, name, active').order('name'),
     supabase.from('route_origins').select('id, name, active').order('name'),
     supabase.from('route_destinations').select('id, name, active').order('name'),
+    // Textos padrão de observação (migration 0030). Se ela ainda não foi
+    // aplicada, a consulta falha e a tela abre sem os atalhos, sem quebrar.
+    supabase.from('additional_presets').select('id, additional_id, text').order('created_at'),
   ])
 
   const subtypeRows = (subtypes.data ?? []) as SubtypeRow[]
+  const presetRows = (presets.data ?? []) as PresetRow[]
   const additionalsWithSubtypes: Additional[] = (
-    (additionals.data ?? []) as Omit<Additional, 'subtypes'>[]
+    (additionals.data ?? []) as Omit<Additional, 'subtypes' | 'presets'>[]
   ).map((a) => ({
     ...a,
     subtypes: subtypeRows
       .filter((s) => s.additional_id === a.id)
       .map(({ id, name, active }) => ({ id, name, active })),
+    presets: presetRows
+      .filter((p) => p.additional_id === a.id)
+      .map(({ id, text }) => ({ id, text })),
   }))
 
   return (

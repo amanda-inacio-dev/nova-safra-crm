@@ -311,14 +311,55 @@ export function AdditionalsSelector({
 
                   {/* Observação no nível do adicional (subtipos têm a própria) */}
                   {a.input_type !== 'SUBTYPES' && (
-                    <Textarea
-                      rows={2}
-                      value={e.observation}
-                      onChange={(ev) => setEntry(a.id, { observation: ev.target.value })}
-                      placeholder={
-                        a.input_type === 'OBSERVATION' ? 'Observação' : 'Observação (opcional)'
-                      }
-                    />
+                    <div className="flex flex-col gap-2">
+                      {/* Textos prontos cadastrados no Admin (ex.: "15 dias" no
+                          Limite de permanência). Clicar preenche o campo, que
+                          continua livre para alterar ou apagar. */}
+                      {a.presets.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          {a.presets.map((preset) => {
+                            const active = e.observation.trim() === preset
+                            return (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() =>
+                                  setEntry(a.id, { observation: active ? '' : preset })
+                                }
+                                className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                                  active
+                                    ? 'border-brand-600 bg-brand-50 text-brand-800'
+                                    : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                                }`}
+                              >
+                                {preset}
+                              </button>
+                            )
+                          })}
+                          {e.observation.trim() !== '' && (
+                            <button
+                              type="button"
+                              onClick={() => setEntry(a.id, { observation: '' })}
+                              className="text-xs font-medium text-slate-400 hover:text-slate-600"
+                            >
+                              limpar
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      <Textarea
+                        rows={2}
+                        value={e.observation}
+                        onChange={(ev) => setEntry(a.id, { observation: ev.target.value })}
+                        placeholder={
+                          a.presets.length > 0
+                            ? 'Escolha acima ou digite outra informação'
+                            : a.input_type === 'OBSERVATION'
+                              ? 'Observação'
+                              : 'Observação (opcional)'
+                        }
+                      />
+                    </div>
                   )}
                 </div>
               )}

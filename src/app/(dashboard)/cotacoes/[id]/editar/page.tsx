@@ -87,6 +87,7 @@ export default async function EditQuotationPage({ params }: { params: Promise<{ 
     portsRes,
     additionalsCatalogRes,
     subtypesRes,
+    presetsRes,
     certOptionsRes,
     sendersRes,
     recipientsRes,
@@ -124,6 +125,12 @@ export default async function EditQuotationPage({ params }: { params: Promise<{ 
     supabase
       .from('additional_subtypes')
       .select('id, additional_id, name')
+      .eq('active', true)
+      .order('created_at'),
+    // Textos padrao da observacao (migration 0030) — atalhos no formulario.
+    supabase
+      .from('additional_presets')
+      .select('additional_id, text')
       .eq('active', true)
       .order('created_at'),
     supabase.from('certifications').select('id, name, image_url').eq('active', true).order('name'),
@@ -187,13 +194,15 @@ export default async function EditQuotationPage({ params }: { params: Promise<{ 
   )
 
   const subtypeRows = (subtypesRes.data ?? []) as SubtypeRow[]
+  const presetRows = (presetsRes.data ?? []) as { additional_id: string; text: string }[]
   const additionalOptions: AdditionalOption[] = (
-    (additionalsCatalogRes.data ?? []) as Omit<AdditionalOption, 'subtypes'>[]
+    (additionalsCatalogRes.data ?? []) as Omit<AdditionalOption, 'subtypes' | 'presets'>[]
   ).map((a) => ({
     ...a,
     subtypes: subtypeRows
       .filter((s) => s.additional_id === a.id)
       .map(({ id, name }) => ({ id, name })),
+    presets: presetRows.filter((p) => p.additional_id === a.id).map((p) => p.text),
   }))
 
   // Reconstrói quais adicionais GERAIS estavam marcados no Total Estimado (os campos

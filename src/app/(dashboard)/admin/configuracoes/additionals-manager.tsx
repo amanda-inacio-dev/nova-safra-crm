@@ -10,6 +10,7 @@ import {
   type AdditionalInputType,
 } from './additionals-actions'
 import { SubtypesManager, type Subtype } from './subtypes-manager'
+import { PresetsManager, type Preset } from './presets-manager'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,8 @@ export type Additional = {
   has_unit_basis: boolean
   active: boolean
   subtypes: Subtype[]
+  /** Textos padrao de observacao (migration 0030). */
+  presets: Preset[]
 }
 
 const TYPE_HINT: Record<AdditionalInputType, string> = {
@@ -81,6 +84,13 @@ function Card({ item }: { item: Additional }) {
 
       {item.input_type === 'SUBTYPES' && (
         <SubtypesManager additionalId={item.id} subtypes={item.subtypes} />
+      )}
+
+      {/* So faz sentido onde existe campo de observacao livre. Em SUBTYPES a
+          observacao e por subtipo, entao um texto padrao do adicional inteiro
+          nao teria onde ser aplicado. */}
+      {item.input_type !== 'SUBTYPES' && (
+        <PresetsManager additionalId={item.id} presets={item.presets} />
       )}
     </div>
   )

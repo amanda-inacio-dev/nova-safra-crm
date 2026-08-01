@@ -11,6 +11,8 @@ export type AdditionalOption = {
   input_type: AdditionalInputType
   has_unit_basis: boolean
   subtypes: { id: string; name: string }[]
+  /** Textos prontos para a observação (ex.: "15 dias"), cadastrados no Admin. */
+  presets: string[]
 }
 
 /** Base do valor de um adicional (ex.: Estadia). */

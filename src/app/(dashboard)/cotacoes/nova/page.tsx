@@ -14,6 +14,7 @@ export default async function NewQuotationPage() {
     ports,
     additionals,
     subtypes,
+    presets,
     certifications,
     senders,
     recipients,
@@ -32,6 +33,12 @@ export default async function NewQuotationPage() {
       .select('id, additional_id, name')
       .eq('active', true)
       .order('created_at'),
+    // Textos padrao da observacao (migration 0030) — atalhos no formulario.
+    supabase
+      .from('additional_presets')
+      .select('additional_id, text')
+      .eq('active', true)
+      .order('created_at'),
     supabase.from('certifications').select('id, name, image_url').eq('active', true).order('name'),
     supabase.from('senders').select('id, name').eq('active', true).order('name'),
     supabase.from('recipients').select('id, name').eq('active', true).order('name'),
@@ -40,13 +47,15 @@ export default async function NewQuotationPage() {
   ])
 
   const subtypeRows = (subtypes.data ?? []) as SubtypeRow[]
+  const presetRows = (presets.data ?? []) as { additional_id: string; text: string }[]
   const additionalOptions: AdditionalOption[] = (
-    (additionals.data ?? []) as Omit<AdditionalOption, 'subtypes'>[]
+    (additionals.data ?? []) as Omit<AdditionalOption, 'subtypes' | 'presets'>[]
   ).map((a) => ({
     ...a,
     subtypes: subtypeRows
       .filter((s) => s.additional_id === a.id)
       .map(({ id, name }) => ({ id, name })),
+    presets: presetRows.filter((p) => p.additional_id === a.id).map((p) => p.text),
   }))
 
   return (
