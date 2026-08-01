@@ -127,7 +127,12 @@ export function QuotationForm({
   const [addSelections, setAddSelections] = useState<QuotationAdditionalInput[]>(
     initial?.additionals ?? []
   )
-  const [certIds, setCertIds] = useState<string[]>(initial?.certificationIds ?? [])
+  // Cotação nova já nasce com TODAS as certificações marcadas — o normal é
+  // exibi-las no PDF; desmarcar é a exceção. Ao editar, vale o que foi salvo
+  // (senão desmarcar uma seria desfeito na próxima abertura da tela).
+  const [certIds, setCertIds] = useState<string[]>(
+    initial ? initial.certificationIds : certifications.map((c) => c.id)
+  )
 
   // Seguro
   const [insuranceRate, setInsuranceRate] = useState(initial?.insuranceRate ?? '')

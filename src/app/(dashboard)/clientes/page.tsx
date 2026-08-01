@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { NewClientModal } from './new-client-modal'
+import { DeleteClientButton } from './delete-client-button'
 
 type ClientRow = {
   id: string
@@ -22,7 +23,8 @@ export default async function ClientsPage({
 }: {
   searchParams: Promise<{ q?: string }>
 }) {
-  await requireRole(['ADMIN', 'COMMERCIAL'])
+  const profile = await requireRole(['ADMIN', 'COMMERCIAL'])
+  const isAdmin = profile.role === 'ADMIN'
   const { q } = await searchParams
   const search = (q ?? '').trim()
 
@@ -123,12 +125,15 @@ export default async function ClientsPage({
                     {client.notes ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/clientes/${client.id}/editar`}
-                      className="text-brand-700 hover:text-brand-800 text-sm font-medium"
-                    >
-                      Editar
-                    </Link>
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/clientes/${client.id}/editar`}
+                        className="text-brand-700 hover:text-brand-800 text-sm font-medium"
+                      >
+                        Editar
+                      </Link>
+                      {isAdmin && <DeleteClientButton id={client.id} name={client.name} />}
+                    </div>
                   </td>
                 </tr>
               ))

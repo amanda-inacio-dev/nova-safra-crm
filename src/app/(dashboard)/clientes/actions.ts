@@ -191,6 +191,44 @@ export async function createClientAction(
   return { ok: true }
 }
 
+/**
+ * Exclui um cliente — só Admin (a policy da migration 0029 também barra no banco).
+ *
+ * Cliente com cotações NÃO é excluído: o histórico comercial iria junto. Em vez
+ * de deixar o erro de chave estrangeira aparecer cru, a checagem é feita antes
+ * para dar um aviso com o número de cotações.
+ */
+export async function deleteClientAction(clientId: string): Promise<{ error?: string }> {
+  await requireRole(['ADMIN'])
+  if (!clientId) return { error: 'Cliente inválido.' }
+
+  const supabase = await createClient()
+
+  const { count, error: countError } = await supabase
+    .from('quotations')
+    .select('id', { count: 'exact', head: true })
+    .eq('client_id', clientId)
+
+  if (countError) {
+    console.error('[deleteClientAction] falha ao contar cotações:', countError)
+    return { error: 'Não foi possível verificar as cotações do cliente.' }
+  }
+  if ((count ?? 0) > 0) {
+    return {
+      error: `Este cliente tem ${count} cotação(ões) e não pode ser excluído. Exclua ou transfira as cotações antes.`,
+    }
+  }
+
+  const { error } = await supabase.from('clients').delete().eq('id', clientId)
+  if (error) {
+    console.error('[deleteClientAction] falha ao excluir cliente:', error)
+    return { error: 'Não foi possível excluir o cliente.' }
+  }
+
+  revalidatePath('/clientes')
+  return {}
+}
+
 export async function updateClientAction(
   _prev: ClientActionState,
   formData: FormData
