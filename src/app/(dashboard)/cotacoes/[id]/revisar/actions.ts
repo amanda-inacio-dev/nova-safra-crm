@@ -9,6 +9,7 @@ import { getQuotationPdfData } from '@/lib/pdf/get-quotation-data'
 import { renderQuotationHtml } from '@/lib/pdf/template'
 import { htmlToPdfBuffer } from '@/lib/pdf/generate'
 import { sendQuotationEmail } from '@/lib/email/send-quotation-email'
+import { clientEmailOptions } from '@/lib/quotation/client-emails'
 import { uploadImage } from '@/lib/storage/upload-image'
 
 const PDF_BUCKET = 'quotation-pdfs'
@@ -99,8 +100,10 @@ export async function confirmQuotation(quotationId: string): Promise<{ error?: s
  *  assim devolve o link para a equipe compartilhar manualmente. */
 export async function sendQuotationToClient(
   quotationId: string,
-  customMessage?: string
-): Promise<{ url?: string; warning?: string; error?: string }> {
+  customMessage?: string,
+  /** E-mails escolhidos na tela. Vazio = manda para todos os contatos do cliente. */
+  selectedEmails?: string[]
+): Promise<{ url?: string; warning?: string; error?: string; sentTo?: string[] }> {
   const profile = await requireRole(['ADMIN', 'COMMERCIAL'])
   const supabase = await createClient()
 
@@ -113,17 +116,46 @@ export async function sendQuotationToClient(
   const { data: quotation } = await supabase
     .from('quotations')
     .select(
-      'id, code, status, pdf_url, client_token, parent_id, version, client:clients(name, email)'
+      'id, code, status, pdf_url, client_token, parent_id, version, client_id, client:clients(name, contact_name, email)'
     )
     .eq('id', quotationId)
     .single()
 
-  const client = quotation?.client as unknown as { name: string; email: string | null } | null
+  const client = quotation?.client as unknown as {
+    name: string
+    contact_name: string | null
+    email: string | null
+  } | null
   if (!quotation) return { error: 'Cotação não encontrada.' }
   if (!quotation.pdf_url) return { error: 'Gere o PDF antes de enviar.' }
   if (quotation.status === 'RASCUNHO')
     return { error: 'Confirme a cotação antes de enviar ao cliente.' }
-  if (!client?.email) return { error: 'O cliente não tem e-mail cadastrado.' }
+
+  // Destinatários: contato principal + contatos adicionais (migration 0028).
+  const { data: contactsData } = await supabase
+    .from('client_contacts')
+    .select('name, email, role')
+    .eq('client_id', quotation.client_id)
+    .order('created_at')
+
+  const allOptions = clientEmailOptions(client ?? {}, contactsData ?? [])
+  // A escolha da tela é conferida contra a lista real do cliente — assim não dá
+  // pra mandar a cotação para um endereço que não está no cadastro.
+  const chosen = (selectedEmails ?? []).map((e) => e.trim().toLowerCase()).filter(Boolean)
+  const recipients = (
+    chosen.length > 0
+      ? allOptions.filter((o) => chosen.includes(o.email.toLowerCase()))
+      : allOptions
+  ).map((o) => o.email)
+
+  if (recipients.length === 0) {
+    return {
+      error:
+        allOptions.length === 0
+          ? 'O cliente não tem e-mail cadastrado.'
+          : 'Selecione pelo menos um destinatário.',
+    }
+  }
 
   // Só a versão mais recente da família pode ser enviada ao cliente.
   const rootId = quotation.parent_id ?? quotation.id
@@ -161,8 +193,8 @@ export async function sendQuotationToClient(
   const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cotacao/${token}`
 
   const { error: emailError } = await sendQuotationEmail({
-    to: client.email,
-    clientName: client.name,
+    to: recipients,
+    clientName: client?.name ?? 'cliente',
     quotationCode: quotation.code ?? '',
     companyName,
     portalUrl,
@@ -174,8 +206,12 @@ export async function sendQuotationToClient(
   revalidatePath(`/cotacoes/${quotationId}/revisar`)
 
   if (emailError)
-    return { url: portalUrl, warning: `Link gerado, mas o e-mail não foi enviado: ${emailError}` }
-  return { url: portalUrl }
+    return {
+      url: portalUrl,
+      warning: `Link gerado, mas o e-mail não foi enviado: ${emailError}`,
+      sentTo: recipients,
+    }
+  return { url: portalUrl, sentTo: recipients }
 }
 
 /** Salva a assinatura (imagem) do usuário logado — aparece no e-mail enviado ao

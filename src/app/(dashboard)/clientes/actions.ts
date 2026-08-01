@@ -50,6 +50,83 @@ function parseFields(formData: FormData): { fields?: ClientFields; error?: strin
   }
 }
 
+type ContactInput = {
+  name: string
+  email: string | null
+  phone: string | null
+  role: string | null
+}
+
+/**
+ * Lê os contatos adicionais, que chegam como JSON num campo escondido (são
+ * vários campos por linha e um número variável de linhas).
+ *
+ * Linha totalmente em branco é descartada em silêncio — é comum a pessoa
+ * clicar em "Adicionar contato" e desistir.
+ */
+function parseContacts(formData: FormData): { contacts?: ContactInput[]; error?: string } {
+  const raw = String(formData.get('contacts') ?? '').trim()
+  if (!raw) return { contacts: [] }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return { error: 'Não foi possível ler os contatos.' }
+  }
+  if (!Array.isArray(parsed)) return { error: 'Não foi possível ler os contatos.' }
+
+  const contacts: ContactInput[] = []
+  for (const item of parsed) {
+    const row = (item ?? {}) as Record<string, unknown>
+    const name = String(row.name ?? '').trim()
+    const email = String(row.email ?? '').trim()
+    const phone = String(row.phone ?? '').trim()
+    const role = String(row.role ?? '').trim()
+
+    if (!name && !email && !phone && !role) continue
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return { error: `E-mail inválido no contato "${name || email}".` }
+    }
+    contacts.push({ name, email: email || null, phone: phone || null, role: role || null })
+  }
+
+  return { contacts }
+}
+
+/**
+ * Regrava os contatos do cliente (apaga e insere de novo) — mesmo padrão já
+ * usado nos filhos da cotação. Se a migration 0028 ainda não foi aplicada, o
+ * cadastro do cliente não quebra: só os contatos adicionais não são salvos.
+ */
+async function saveContacts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  clientId: string,
+  contacts: ContactInput[]
+): Promise<{ error?: string }> {
+  const { error: deleteError } = await supabase
+    .from('client_contacts')
+    .delete()
+    .eq('client_id', clientId)
+
+  if (deleteError) {
+    console.error('[saveContacts] falha ao limpar contatos:', deleteError)
+    return { error: 'Cliente salvo, mas não foi possível atualizar os contatos.' }
+  }
+
+  if (contacts.length === 0) return {}
+
+  const { error } = await supabase
+    .from('client_contacts')
+    .insert(contacts.map((c) => ({ ...c, client_id: clientId })))
+
+  if (error) {
+    console.error('[saveContacts] falha ao inserir contatos:', error)
+    return { error: 'Cliente salvo, mas não foi possível salvar os contatos.' }
+  }
+  return {}
+}
+
 /** Envia a logo ao Storage e retorna a URL pública, ou erro. */
 async function uploadLogo(file: File): Promise<{ url?: string; error?: string }> {
   if (!file.type.startsWith('image/')) {
@@ -93,10 +170,22 @@ export async function createClientAction(
     logoUrl = result.url ?? null
   }
 
-  const supabase = await createClient()
-  const { error: dbError } = await supabase.from('clients').insert({ ...fields, logo_url: logoUrl })
+  const { contacts, error: contactsError } = parseContacts(formData)
+  if (contactsError || !contacts) return { error: contactsError }
 
-  if (dbError) return { error: 'Não foi possível salvar o cliente.' }
+  const supabase = await createClient()
+  const { data: created, error: dbError } = await supabase
+    .from('clients')
+    .insert({ ...fields, logo_url: logoUrl })
+    .select('id')
+    .single()
+
+  if (dbError || !created) return { error: 'Não foi possível salvar o cliente.' }
+
+  if (contacts.length > 0) {
+    const result = await saveContacts(supabase, created.id, contacts)
+    if (result.error) return { error: result.error }
+  }
 
   revalidatePath('/clientes')
   return { ok: true }
@@ -123,10 +212,16 @@ export async function updateClientAction(
     update.logo_url = result.url
   }
 
+  const { contacts, error: contactsError } = parseContacts(formData)
+  if (contactsError || !contacts) return { error: contactsError }
+
   const supabase = await createClient()
   const { error: dbError } = await supabase.from('clients').update(update).eq('id', id)
 
   if (dbError) return { error: 'Não foi possível salvar as alterações.' }
+
+  const result = await saveContacts(supabase, id, contacts)
+  if (result.error) return { error: result.error }
 
   revalidatePath('/clientes')
   redirect('/clientes')

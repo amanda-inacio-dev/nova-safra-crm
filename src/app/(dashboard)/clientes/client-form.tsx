@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { FormMessage } from '@/components/ui/form-message'
 import { formatCnpj } from '@/lib/utils/cnpj'
+import { ContactsEditor, type ClientContactInitial } from './contacts-editor'
 
 export type ClientInitial = {
   id: string
@@ -21,6 +22,8 @@ export type ClientInitial = {
   phone: string | null
   notes: string | null
   logo_url: string | null
+  /** Contatos adicionais (migration 0028). */
+  contacts?: ClientContactInitial[]
 }
 
 type Action = (prev: ClientActionState, formData: FormData) => Promise<ClientActionState>
@@ -69,7 +72,7 @@ export function ClientForm({
         </div>
 
         <div className="sm:col-span-2">
-          <Label htmlFor="contact_name">Contato</Label>
+          <Label htmlFor="contact_name">Contato principal</Label>
           <Input
             id="contact_name"
             name="contact_name"
@@ -101,7 +104,7 @@ export function ClientForm({
         </div>
 
         <div className="sm:col-span-2">
-          <Label htmlFor="email">E-mail de contato</Label>
+          <Label htmlFor="email">E-mail do contato principal</Label>
           <Input
             id="email"
             name="email"
@@ -110,6 +113,8 @@ export function ClientForm({
             placeholder="contato@empresa.com"
           />
         </div>
+
+        <ContactsEditor initial={initial?.contacts ?? []} />
 
         <div className="sm:col-span-2">
           <Label htmlFor="notes">Observações</Label>

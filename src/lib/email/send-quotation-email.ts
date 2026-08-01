@@ -91,7 +91,8 @@ function buildEmailHtml(params: {
 /** Envia o e-mail de cotação ao cliente via Resend. Retorna `error` se a
  *  integração não estiver configurada (`.env.local`) ou se o envio falhar. */
 export async function sendQuotationEmail(params: {
-  to: string
+  /** Um endereço ou vários (todos recebem o mesmo e-mail). */
+  to: string | string[]
   clientName: string
   quotationCode: string
   companyName: string

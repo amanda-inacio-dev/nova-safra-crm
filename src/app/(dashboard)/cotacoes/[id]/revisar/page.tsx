@@ -3,6 +3,7 @@ import { requireRole } from '@/lib/auth/require-role'
 import { createClient } from '@/lib/supabase/server'
 import { RevisarPdfPanel, type QuotationEvent, type VersionSummary } from './revisar-panel'
 import { getOperationUsers } from '../operation-actions'
+import { clientEmailOptions, type ClientEmailOption } from '@/lib/quotation/client-emails'
 import type { QuotationStatus } from '@/types'
 
 /**
@@ -24,7 +25,9 @@ export default async function RevisarQuotationPage({
   const [{ data }, { data: eventsData }, { data: userRow }] = await Promise.all([
     supabase
       .from('quotations')
-      .select('id, code, status, pdf_url, version, parent_id, cte_url')
+      .select(
+        'id, code, status, pdf_url, version, parent_id, cte_url, client_id, client:clients(name, contact_name, email)'
+      )
       .eq('id', id)
       .single(),
     supabase
@@ -49,6 +52,23 @@ export default async function RevisarQuotationPage({
   const operationUsers =
     profile.role !== 'OPERATION' && data.status === 'APROVADA' ? await getOperationUsers() : []
 
+  // Destinatários possíveis: contato principal + adicionais (migration 0028).
+  // A Operação não envia cotação ao cliente, então nem carrega essa lista.
+  const client = data.client as unknown as {
+    name: string
+    contact_name: string | null
+    email: string | null
+  } | null
+  let clientEmails: ClientEmailOption[] = []
+  if (profile.role !== 'OPERATION') {
+    const { data: contactsData } = await supabase
+      .from('client_contacts')
+      .select('name, email, role')
+      .eq('client_id', data.client_id)
+      .order('created_at')
+    clientEmails = clientEmailOptions(client ?? {}, contactsData ?? [])
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -71,6 +91,7 @@ export default async function RevisarQuotationPage({
         role={profile.role}
         cteUrl={data.cte_url}
         operationUsers={operationUsers}
+        clientEmails={clientEmails}
       />
     </div>
   )

@@ -28,6 +28,7 @@ import {
   type QuotationEvent,
   type VersionSummary,
 } from '../quotation-history'
+import type { ClientEmailOption } from '@/lib/quotation/client-emails'
 import type { QuotationStatus, UserRole } from '@/types'
 
 export type { QuotationEvent, VersionSummary }
@@ -43,6 +44,7 @@ export function RevisarPdfPanel({
   role,
   cteUrl,
   operationUsers,
+  clientEmails,
 }: {
   quotationId: string
   status: QuotationStatus
@@ -54,10 +56,19 @@ export function RevisarPdfPanel({
   role: UserRole
   cteUrl: string | null
   operationUsers: OperationUser[]
+  /** Contatos do cliente que podem receber a cotação (principal + adicionais). */
+  clientEmails: ClientEmailOption[]
 }) {
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl)
   const [error, setError] = useState<string>()
-  const [sendResult, setSendResult] = useState<{ url?: string; warning?: string }>()
+  const [sendResult, setSendResult] = useState<{
+    url?: string
+    warning?: string
+    sentTo?: string[]
+  }>()
+  // Todos os contatos vêm marcados: o normal é avisar o cliente inteiro, e
+  // desmarcar quem não deve receber é mais rápido do que marcar um por um.
+  const [recipients, setRecipients] = useState<string[]>(() => clientEmails.map((c) => c.email))
   const [message, setMessage] = useState('')
   const [signatureUrl, setSignatureUrl] = useState(initialSignatureUrl)
   const [signatureError, setSignatureError] = useState<string>()
@@ -104,9 +115,9 @@ export function RevisarPdfPanel({
     setError(undefined)
     setSendResult(undefined)
     startSending(async () => {
-      const res = await sendQuotationToClient(quotationId, message)
+      const res = await sendQuotationToClient(quotationId, message, recipients)
       if (res.error) setError(res.error)
-      else setSendResult({ url: res.url, warning: res.warning })
+      else setSendResult({ url: res.url, warning: res.warning, sentTo: res.sentTo })
     })
   }
 
@@ -222,6 +233,41 @@ export function RevisarPdfPanel({
           {!isDraft && (
             <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4">
               <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-slate-700">Enviar para</span>
+                {clientEmails.length === 0 ? (
+                  <p className="text-sm text-amber-700">
+                    Este cliente não tem e-mail cadastrado. Cadastre em Clientes → editar.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-x-5 gap-y-2">
+                    {clientEmails.map((option) => (
+                      <label
+                        key={option.email}
+                        className="flex items-center gap-2 text-sm text-slate-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={recipients.includes(option.email)}
+                          onChange={() =>
+                            setRecipients((prev) =>
+                              prev.includes(option.email)
+                                ? prev.filter((e) => e !== option.email)
+                                : [...prev, option.email]
+                            )
+                          }
+                          className="accent-brand-700 h-4 w-4"
+                        />
+                        <span>
+                          {option.label}{' '}
+                          <span className="text-slate-400">&lt;{option.email}&gt;</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
                 <label htmlFor="send-message" className="text-sm font-medium text-slate-700">
                   Mensagem para o cliente (opcional)
                 </label>
@@ -274,7 +320,11 @@ export function RevisarPdfPanel({
               </div>
 
               <div>
-                <Button onClick={handleSend} disabled={!canSend || sending} variant="secondary">
+                <Button
+                  onClick={handleSend}
+                  disabled={!canSend || sending || recipients.length === 0}
+                  variant="secondary"
+                >
                   {sending ? 'Enviando…' : 'Enviar por e-mail'}
                 </Button>
               </div>
@@ -284,8 +334,17 @@ export function RevisarPdfPanel({
           {sendResult && (
             <div className="border-brand-200 bg-brand-50 text-brand-900 rounded-lg border p-4 text-sm">
               <p className="font-medium">
-                Link do cliente gerado{sendResult.warning ? '' : ' — e-mail enviado com sucesso'}:
+                Link do cliente gerado
+                {sendResult.warning
+                  ? ''
+                  : ` — e-mail enviado para ${sendResult.sentTo?.length ?? 0} destinatário${
+                      (sendResult.sentTo?.length ?? 0) === 1 ? '' : 's'
+                    }`}
+                :
               </p>
+              {!sendResult.warning && sendResult.sentTo && sendResult.sentTo.length > 0 && (
+                <p className="mt-1 text-xs break-all">{sendResult.sentTo.join(' · ')}</p>
+              )}
               <p className="mt-1 break-all">
                 <a href={sendResult.url} target="_blank" rel="noreferrer" className="underline">
                   {sendResult.url}

@@ -17,11 +17,22 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
 
   if (!data) notFound()
 
+  // Contatos adicionais (migration 0028). Enquanto a migration não for
+  // aplicada, a consulta falha e a tela abre sem eles, em vez de quebrar.
+  const { data: contactsData } = await supabase
+    .from('client_contacts')
+    .select('name, email, phone, role')
+    .eq('client_id', id)
+    .order('created_at')
+
+  const initial = { ...data, contacts: contactsData ?? [] } as ClientInitial
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold text-slate-900">Editar cliente</h1>
-      <div className="max-w-2xl rounded-lg border border-slate-200 bg-white p-6">
-        <ClientForm action={updateClientAction} initial={data as ClientInitial} />
+      {/* Mais largo que antes: a lista de contatos tem 4 colunas por linha. */}
+      <div className="max-w-4xl rounded-lg border border-slate-200 bg-white p-6">
+        <ClientForm action={updateClientAction} initial={initial} />
       </div>
     </div>
   )
