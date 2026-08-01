@@ -11,6 +11,9 @@ import { isMarginAdditional } from './leg-margin-selector'
 import { normalizeName } from '@/lib/quotation/estimate'
 import { randomLocalId } from '@/lib/utils/id'
 
+/** Valor sentinela do select de textos padrao — nao pode colidir com um texto real. */
+const OTHER_OPTION = '__outro__'
+
 /** Pedágio agora é um campo dedicado de cada trecho (legs-editor.tsx) — não pode
  *  também aparecer aqui como adicional geral, senão conta 2x. */
 const GENERAL_EXCLUDED_NAMES = ['Pedágio']
@@ -160,6 +163,10 @@ export function AdditionalsSelector({
   )
   const [state, setState] = useState<State>(() => buildInitial(initial ?? []).state)
   const [manuals, setManuals] = useState<ManualRow[]>(() => buildInitial(initial ?? []).manuals)
+  // Quais adicionais estão em "Outro (digitar)". Precisa ser explícito: com o
+  // campo ainda vazio não dá pra saber, pelo texto, se a pessoa quer digitar
+  // ou apenas ainda não escolheu.
+  const [typing, setTyping] = useState<Record<string, boolean>>({})
 
   function emit(nextState: State, nextManuals: ManualRow[]) {
     onChange(derive(generalAdditionals, nextState, nextManuals))
@@ -309,58 +316,64 @@ export function AdditionalsSelector({
                     </>
                   )}
 
-                  {/* Observação no nível do adicional (subtipos têm a própria) */}
-                  {a.input_type !== 'SUBTYPES' && (
-                    <div className="flex flex-col gap-2">
-                      {/* Textos prontos cadastrados no Admin (ex.: "15 dias" no
-                          Limite de permanência). Clicar preenche o campo, que
-                          continua livre para alterar ou apagar. */}
-                      {a.presets.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          {a.presets.map((preset) => {
-                            const active = e.observation.trim() === preset
-                            return (
-                              <button
-                                key={preset}
-                                type="button"
-                                onClick={() =>
-                                  setEntry(a.id, { observation: active ? '' : preset })
-                                }
-                                className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                                  active
-                                    ? 'border-brand-600 bg-brand-50 text-brand-800'
-                                    : 'border-slate-300 text-slate-600 hover:bg-slate-50'
-                                }`}
-                              >
-                                {preset}
-                              </button>
-                            )
-                          })}
-                          {e.observation.trim() !== '' && (
-                            <button
-                              type="button"
-                              onClick={() => setEntry(a.id, { observation: '' })}
-                              className="text-xs font-medium text-slate-400 hover:text-slate-600"
-                            >
-                              limpar
-                            </button>
+                  {/* Observação no nível do adicional (subtipos têm a própria).
+                      Com textos padrão cadastrados no Admin, a pessoa escolhe
+                      um deles na lista (ex.: "15 dias") ou marca "Outro" para
+                      digitar. Sem textos padrão, é o campo livre de sempre. */}
+                  {a.input_type !== 'SUBTYPES' &&
+                    (a.presets.length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs text-slate-500">
+                          {a.input_type === 'OBSERVATION' ? 'Informação' : 'Observação (opcional)'}
+                        </label>
+                        <Select
+                          value={
+                            typing[a.id] || !a.presets.includes(e.observation.trim())
+                              ? e.observation.trim() === '' && !typing[a.id]
+                                ? ''
+                                : OTHER_OPTION
+                              : e.observation.trim()
+                          }
+                          onChange={(ev) => {
+                            const value = ev.target.value
+                            if (value === OTHER_OPTION) {
+                              setTyping((prev) => ({ ...prev, [a.id]: true }))
+                              return
+                            }
+                            setTyping((prev) => ({ ...prev, [a.id]: false }))
+                            setEntry(a.id, { observation: value })
+                          }}
+                          className="max-w-xs"
+                        >
+                          <option value="">Selecione…</option>
+                          {a.presets.map((preset) => (
+                            <option key={preset} value={preset}>
+                              {preset}
+                            </option>
+                          ))}
+                          <option value={OTHER_OPTION}>Outro (digitar)</option>
+                        </Select>
+
+                        {(typing[a.id] || !a.presets.includes(e.observation.trim())) &&
+                          !(e.observation.trim() === '' && !typing[a.id]) && (
+                            <Textarea
+                              rows={2}
+                              value={e.observation}
+                              onChange={(ev) => setEntry(a.id, { observation: ev.target.value })}
+                              placeholder="Digite a informação"
+                            />
                           )}
-                        </div>
-                      )}
+                      </div>
+                    ) : (
                       <Textarea
                         rows={2}
                         value={e.observation}
                         onChange={(ev) => setEntry(a.id, { observation: ev.target.value })}
                         placeholder={
-                          a.presets.length > 0
-                            ? 'Escolha acima ou digite outra informação'
-                            : a.input_type === 'OBSERVATION'
-                              ? 'Observação'
-                              : 'Observação (opcional)'
+                          a.input_type === 'OBSERVATION' ? 'Observação' : 'Observação (opcional)'
                         }
                       />
-                    </div>
-                  )}
+                    ))}
                 </div>
               )}
             </div>

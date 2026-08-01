@@ -98,7 +98,6 @@ export async function loadQuotationList(
   if (filters.vehicleTypes.length) query = query.in('vehicle_type', filters.vehicleTypes)
   if (filters.segments.length) query = query.in('segment', filters.segments)
   if (filters.ownerIds.length) query = query.in('created_by', filters.ownerIds)
-  if (filters.senders.length) query = query.in('sender', filters.senders)
 
   const from = parseLocalDate(filters.from)
   if (from) query = query.gte('created_at', from.toISOString())
@@ -203,15 +202,14 @@ export async function loadQuotationList(
 
 export type FilterOption = { id: string; name: string }
 
-/** Opções dos filtros (clientes, responsáveis e remetentes já usados). */
+/** Opções dos filtros (clientes e responsáveis cadastrados). */
 export async function loadFilterOptions(): Promise<{
   clients: FilterOption[]
   owners: FilterOption[]
-  senders: FilterOption[]
 }> {
   const supabase = await createClient()
 
-  const [clientsResult, ownersResult, sendersResult] = await Promise.all([
+  const [clientsResult, ownersResult] = await Promise.all([
     supabase.from('clients').select('id, name').order('name'),
     // Responsável = quem cria cotação (Admin/Comercial). Se a migration 0026
     // ainda não foi aplicada, a RLS devolve só o próprio usuário — a tela não
@@ -222,27 +220,11 @@ export async function loadFilterOptions(): Promise<{
       .in('role', ['ADMIN', 'COMMERCIAL'])
       .eq('active', true)
       .order('name'),
-    // Remetentes vêm das cotações existentes, não do catálogo do Admin: o campo
-    // aceita texto livre, então só assim as opções batem com o que dá pra achar.
-    supabase.from('quotations').select('sender').not('sender', 'is', null),
   ])
 
   const owners = ((ownersResult.data ?? []) as { id: string; name: string; email: string }[]).map(
     (u) => ({ id: u.id, name: u.name || u.email })
   )
 
-  const senderNames = [
-    ...new Set(
-      ((sendersResult.data ?? []) as { sender: string | null }[])
-        .map((r) => (r.sender ?? '').trim())
-        .filter(Boolean)
-    ),
-  ].sort((a, b) => a.localeCompare(b, 'pt-BR'))
-
-  return {
-    clients: (clientsResult.data ?? []) as FilterOption[],
-    owners,
-    // O valor do filtro é o próprio texto do remetente (não há id).
-    senders: senderNames.map((name) => ({ id: name, name })),
-  }
+  return { clients: (clientsResult.data ?? []) as FilterOption[], owners }
 }

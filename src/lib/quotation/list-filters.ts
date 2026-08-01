@@ -23,7 +23,6 @@ export type QuotationListFilters = {
   vehicleTypes: string[]
   segments: string[]
   ownerIds: string[]
-  senders: string[]
   /** "yyyy-mm-dd" (vazio = sem limite). */
   from: string
   to: string
@@ -37,7 +36,6 @@ export const EMPTY_FILTERS: QuotationListFilters = {
   vehicleTypes: [],
   segments: [],
   ownerIds: [],
-  senders: [],
   from: '',
   to: '',
 }
@@ -66,7 +64,6 @@ export function parseListFilters(searchParams: RawSearchParams): QuotationListFi
     vehicleTypes: many(searchParams.veiculo),
     segments: many(searchParams.segmento),
     ownerIds: many(searchParams.responsavel),
-    senders: many(searchParams.remetente),
     from: one(searchParams.de),
     to: one(searchParams.ate),
   }

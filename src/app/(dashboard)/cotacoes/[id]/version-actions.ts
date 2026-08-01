@@ -152,8 +152,8 @@ async function cloneChildren(
   return null
 }
 
-/** Cria uma nova versão (v2, v3...) a partir de uma cotação APROVADA ou REPROVADA —
- *  herda todos os dados como pré-preenchimento, mas reinicia status/PDF/token do zero. */
+/** Cria uma nova versão (v2, v3...) a partir de QUALQUER cotação — herda todos
+ *  os dados como pré-preenchimento, mas reinicia status/PDF/token do zero. */
 export async function createNewVersion(quotationId: string): Promise<{ error?: string }> {
   const profile = await requireRole(['ADMIN', 'COMMERCIAL'])
   const supabase = await createClient()
@@ -171,9 +171,8 @@ export async function createNewVersion(quotationId: string): Promise<{ error?: s
 
   const prev = previous as PreviousQuotationRow | null
   if (!prev) return { error: 'Cotação não encontrada.' }
-  if (prev.status !== 'APROVADA' && prev.status !== 'REPROVADA') {
-    return { error: 'Só é possível criar uma nova versão de cotações aprovadas ou reprovadas.' }
-  }
+  // Sem restrição de status: criar uma nova versão é sempre permitido. A versão
+  // anterior fica intacta, com o histórico dela — nada é sobrescrito.
 
   const rootId = rootQuotationId(prev)
 

@@ -28,7 +28,6 @@ describe('parseListFilters', () => {
       veiculo: 'RODOTREM',
       segmento: 'CAFE',
       responsavel: 'user-1',
-      remetente: 'Exportadora Café',
       de: '2026-01-01',
       ate: '2026-03-31',
     })
@@ -40,7 +39,6 @@ describe('parseListFilters', () => {
       vehicleTypes: ['RODOTREM'],
       segments: ['CAFE'],
       ownerIds: ['user-1'],
-      senders: ['Exportadora Café'],
       from: '2026-01-01',
       to: '2026-03-31',
     })

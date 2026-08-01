@@ -27,7 +27,6 @@ export function QuotationFilters({
   filters,
   clients,
   owners,
-  senders,
   forOperation,
   lockedClient = false,
 }: {
@@ -36,7 +35,6 @@ export function QuotationFilters({
   filters: QuotationListFilters
   clients: FilterOption[]
   owners: FilterOption[]
-  senders: FilterOption[]
   forOperation: boolean
   /** Histórico de um cliente específico: o filtro de cliente não faz sentido. */
   lockedClient?: boolean
@@ -114,13 +112,6 @@ export function QuotationFilters({
           label="Responsável"
           options={owners}
           selected={filters.ownerIds}
-        />
-
-        <MultiSelectFilter
-          name="remetente"
-          label="Remetente"
-          options={senders}
-          selected={filters.senders}
         />
 
         <div className="grid grid-cols-2 gap-2">

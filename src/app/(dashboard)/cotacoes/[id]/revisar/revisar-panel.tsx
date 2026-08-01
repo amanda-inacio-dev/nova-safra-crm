@@ -81,6 +81,7 @@ export function RevisarPdfPanel({
   const [signatureUrl, setSignatureUrl] = useState(initialSignatureUrl)
   const [signatureError, setSignatureError] = useState<string>()
   const [forwardOpen, setForwardOpen] = useState(false)
+  const [showCtes, setShowCtes] = useState(false)
   const [generating, startGenerating] = useTransition()
   const [confirming, startConfirming] = useTransition()
   const [sending, startSending] = useTransition()
@@ -93,7 +94,9 @@ export function RevisarPdfPanel({
   const maxVersion = versions.length > 0 ? Math.max(...versions.map((v) => v.version)) : version
   const isLatestVersion = version >= maxVersion
   const canSend = Boolean(pdfUrl) && !isDraft && isLatestVersion
-  const canCreateNewVersion = status === 'APROVADA' || status === 'REPROVADA'
+  // Nova versão é sempre permitida (pedido da usuária): a anterior continua
+  // intacta, então não há risco de perder nada ao criar.
+  const canCreateNewVersion = true
   const canForward = status === 'APROVADA'
   const latestComment =
     status === 'AGUARDANDO_CLIENTE'
@@ -217,28 +220,35 @@ export function RevisarPdfPanel({
 
           {status === 'CONCLUIDA' && (
             <>
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
                 <p className="font-medium">Processo concluído pela Operação.</p>
-                {/* Só mostra o link solto quando não há anexos listados abaixo
-                    (cotações encerradas antes da migration 0032). */}
-                {ctes.length === 0 && cteUrl && (
-                  <a
-                    href={cteUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-1 inline-block underline"
+                {ctes.length > 0 ? (
+                  // Ao lado do aviso, abre/fecha a lista de anexos.
+                  <button
+                    type="button"
+                    onClick={() => setShowCtes((v) => !v)}
+                    className="rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
                   >
-                    Ver CT-e
-                  </a>
+                    {showCtes ? 'Ocultar CT-es' : `Ver CT-es (${ctes.length})`}
+                  </button>
+                ) : (
+                  // Cotações encerradas antes da migration 0032 têm só o link antigo.
+                  cteUrl && (
+                    <a href={cteUrl} target="_blank" rel="noreferrer" className="underline">
+                      Ver CT-e
+                    </a>
+                  )
                 )}
               </div>
               {/* O Comercial vê os CT-es, mas quem anexa/remove é a Operação. */}
-              <CteAttachments
-                quotationId={quotationId}
-                initial={ctes}
-                canEdit={false}
-                isDtaDi={isDtaDi}
-              />
+              {showCtes && ctes.length > 0 && (
+                <CteAttachments
+                  quotationId={quotationId}
+                  initial={ctes}
+                  canEdit={false}
+                  isDtaDi={isDtaDi}
+                />
+              )}
             </>
           )}
 

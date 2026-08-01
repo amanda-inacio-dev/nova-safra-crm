@@ -45,7 +45,6 @@ export default async function QuotationsPage({
         filters={filters}
         clients={options.clients}
         owners={options.owners}
-        senders={options.senders}
         forOperation={isOperation}
       />
 
