@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Nova Safra CRM',
-  description: 'Sistema de cotações de frete — Nova Safra Gestão Logística',
+  description: 'Sistema de cotações de frete — Nova Safra Transportes',
 }
 
 export default function RootLayout({

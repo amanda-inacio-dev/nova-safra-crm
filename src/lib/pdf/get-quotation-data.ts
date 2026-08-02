@@ -359,7 +359,7 @@ export async function getQuotationPdfData(quotationId: string): Promise<Quotatio
     id: q.id,
     code: q.code ?? '',
     version: q.version,
-    companyName: settings?.company_name ?? 'Nova Safra Gestão Logística',
+    companyName: settings?.company_name ?? 'Nova Safra Transportes',
     companyLogoUrl: settings?.logo_url ?? null,
     clientName: q.client?.name ?? '',
     clientLogoUrl: q.client?.logo_url ?? null,

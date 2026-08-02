@@ -66,7 +66,7 @@ export async function forwardToOperation(
     .select('company_name')
     .eq('id', 1)
     .single()
-  const companyName = settings?.company_name ?? 'Nova Safra Gestão Logística'
+  const companyName = settings?.company_name ?? 'Nova Safra Transportes'
   const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cotacoes/${quotationId}/revisar`
 
   for (const userId of userIds) {
@@ -150,7 +150,7 @@ export async function requestRevision(
       to: creator.email,
       recipientName: creator.name,
       quotationCode: quotation.code ?? '',
-      companyName: settings?.company_name ?? 'Nova Safra Gestão Logística',
+      companyName: settings?.company_name ?? 'Nova Safra Transportes',
       type: 'REVISION_REQUESTED',
       comment: trimmed,
       dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cotacoes/${quotationId}/revisar`,
@@ -294,7 +294,7 @@ export async function closeQuotation(
       to: creator.email,
       recipientName: creator.name,
       quotationCode: quotation.code ?? '',
-      companyName: settings?.company_name ?? 'Nova Safra Gestão Logística',
+      companyName: settings?.company_name ?? 'Nova Safra Transportes',
       type: 'QUOTATION_CLOSED',
       dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cotacoes/${quotationId}/revisar`,
       // O botão do e-mail leva ao primeiro CT-e; os demais ficam na tela da cotação.

@@ -54,7 +54,7 @@ async function notifyCreator(
     recipientName: creator.name,
     clientName: quotation.client?.name ?? 'Cliente',
     quotationCode: quotation.code ?? '',
-    companyName: settings?.company_name ?? 'Nova Safra Gestão Logística',
+    companyName: settings?.company_name ?? 'Nova Safra Transportes',
     type,
     comment,
     dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cotacoes/${quotation.id}/revisar`,

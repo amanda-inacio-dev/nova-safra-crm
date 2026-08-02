@@ -189,7 +189,7 @@ export async function sendQuotationToClient(
     .select('company_name')
     .eq('id', 1)
     .single()
-  const companyName = settings?.company_name ?? 'Nova Safra Gestão Logística'
+  const companyName = settings?.company_name ?? 'Nova Safra Transportes'
   const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cotacao/${token}`
 
   const { error: emailError } = await sendQuotationEmail({

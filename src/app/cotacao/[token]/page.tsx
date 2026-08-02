@@ -27,7 +27,7 @@ export default async function ClientPortalPage({ params }: { params: Promise<{ t
   if (!quotation) notFound()
 
   const q = quotation as unknown as QuotationRow
-  const companyName = settings?.company_name ?? 'Nova Safra Gestão Logística'
+  const companyName = settings?.company_name ?? 'Nova Safra Transportes'
 
   return (
     <div className="flex min-h-screen flex-1 flex-col items-center bg-gradient-to-br from-[#123822] to-[#1f5c39] px-4 py-10">

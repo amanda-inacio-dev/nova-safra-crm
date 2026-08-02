@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="rounded-xl bg-white p-3 shadow-lg">
             <Image
               src="/assets/logo-nova-safra.jpeg"
-              alt="Nova Safra Gestão Logística"
+              alt="Nova Safra Transportes"
               width={160}
               height={64}
               priority
@@ -18,7 +18,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
         <div className="rounded-xl bg-white p-8 shadow-xl">{children}</div>
         <p className="mt-6 text-center text-xs text-white/70">
-          Nova Safra Gestão Logística — Sistema de Cotações
+          Nova Safra Transportes — Sistema de Cotações
         </p>
       </div>
     </div>

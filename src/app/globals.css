@@ -4,19 +4,24 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Paleta da marca Nova Safra — azul escuro (referência do dashboard) */
-  --color-brand-50: #eef4fb;
-  --color-brand-100: #d9e6f5;
-  --color-brand-200: #b3cdeb;
-  --color-brand-600: #1c4e85;
-  --color-brand-700: #163d68;
-  --color-brand-800: #0f2a4a;
-  --color-brand-900: #0a1f38;
+  /* Paleta da marca Nova Safra — VERDE da logo.
+     São os mesmos tons já aprovados no PDF e no portal do cliente, então
+     documento e sistema passam a falar a mesma língua. Todo o sistema usa
+     estes tokens (`brand-*`): trocar aqui repinta a barra lateral, botões,
+     links e destaques de uma vez. */
+  --color-brand-50: #f2f7f3;
+  --color-brand-100: #e7f1ea;
+  --color-brand-200: #c9e0d2;
+  --color-brand-600: #3c8c5c;
+  --color-brand-700: #1f5c39;
+  --color-brand-800: #17492d;
+  --color-brand-900: #123822;
 }
 
 body {
-  background: #f8fafc;
-  color: #0f172a;
+  /* Branco levemente esverdeado — combina com o verde sem puxar pro cinza-azulado */
+  background: #f7faf8;
+  color: #12211a;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 

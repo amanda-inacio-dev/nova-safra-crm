@@ -54,20 +54,35 @@ const DISPLAY_LABEL_OPERATION: Partial<Record<QuotationDisplayStatus, string>> =
   REVISAO_ENVIADA: 'Revisão realizada',
 }
 
+/**
+ * Uma cor por estado — nenhuma se repete.
+ *
+ * Antes vários estados caíam em tons de azul parecidos (sky/indigo/blue/cyan) e
+ * ficava difícil diferenciar de relance. Agora cada um tem um matiz próprio, e
+ * os dois estados que precisam saltar aos olhos são preenchidos (fundo forte,
+ * texto branco): APROVADA e CONCLUIDA.
+ */
 const DISPLAY_COLOR: Record<QuotationDisplayStatus, string> = {
+  // Cinza: ainda não é nada.
   RASCUNHO: 'bg-slate-100 text-slate-600',
-  PRONTA: 'bg-sky-50 text-sky-700',
-  AGUARDANDO_CLIENTE: 'bg-indigo-50 text-indigo-700',
-  COMENTADA: 'bg-amber-50 text-amber-700',
-  APROVADA: 'bg-emerald-50 text-emerald-700',
-  // Esperando alguém agir: laranja chama atenção.
-  REVISAO_SOLICITADA: 'bg-orange-50 text-orange-700',
-  REPROVADA: 'bg-red-50 text-red-700',
-  ENCAMINHADA: 'bg-blue-50 text-blue-700',
-  // Já reenviada, de volta ao fluxo normal: ciano distingue do 1º envio (azul)
-  // sem parecer verde.
-  REVISAO_ENVIADA: 'bg-cyan-50 text-cyan-700',
-  CONCLUIDA: 'bg-green-100 text-green-700',
+  // Azul-claro: pronta, mas parada.
+  PRONTA: 'bg-sky-100 text-sky-800',
+  // Roxo: está com o cliente.
+  AGUARDANDO_CLIENTE: 'bg-violet-100 text-violet-800',
+  // Âmbar: o cliente falou algo, mas não decidiu.
+  COMENTADA: 'bg-amber-100 text-amber-800',
+  // Verde-limão preenchido: a notícia boa do fluxo, salta aos olhos.
+  APROVADA: 'bg-lime-400 text-lime-950',
+  // Laranja: alguém precisa agir.
+  REVISAO_SOLICITADA: 'bg-orange-100 text-orange-800',
+  // Vermelho: negativo.
+  REPROVADA: 'bg-red-100 text-red-800',
+  // Azul: seguiu para a Operação.
+  ENCAMINHADA: 'bg-blue-100 text-blue-800',
+  // Turquesa: reenviada depois do ajuste (distinta do 1º envio).
+  REVISAO_ENVIADA: 'bg-teal-100 text-teal-800',
+  // Verde escuro preenchido: fim do processo.
+  CONCLUIDA: 'bg-green-700 text-white',
 }
 
 /** Estados oferecidos no filtro da lista, na ordem do ciclo da cotação. */

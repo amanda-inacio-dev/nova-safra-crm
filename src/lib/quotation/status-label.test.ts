@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { hasRevisionEvent, statusDisplayLabel, statusColorClass } from './status-label'
+import {
+  hasRevisionEvent,
+  statusDisplayLabel,
+  statusColorClass,
+  displayStatusColor,
+  STAFF_DISPLAY_STATUSES,
+} from './status-label'
 
 describe('hasRevisionEvent', () => {
   it('false quando não há evento de revisão', () => {
@@ -69,43 +75,36 @@ describe('statusDisplayLabel — Operação', () => {
   })
 })
 
-describe('statusColorClass — Comercial', () => {
-  it('cada status base tem sua própria cor', () => {
-    expect(statusColorClass('RASCUNHO', false, false)).toBe('bg-slate-100 text-slate-600')
-    expect(statusColorClass('PRONTA', false, false)).toBe('bg-sky-50 text-sky-700')
-    expect(statusColorClass('AGUARDANDO_CLIENTE', false, false)).toBe(
-      'bg-indigo-50 text-indigo-700'
-    )
-    expect(statusColorClass('APROVADA', false, false)).toBe('bg-emerald-50 text-emerald-700')
-    expect(statusColorClass('REPROVADA', false, false)).toBe('bg-red-50 text-red-700')
-    expect(statusColorClass('ENCAMINHADA', false, false)).toBe('bg-blue-50 text-blue-700')
-    expect(statusColorClass('CONCLUIDA', false, false)).toBe('bg-green-100 text-green-700')
+describe('cores dos status', () => {
+  it('NENHUMA cor se repete entre os 10 estados', () => {
+    const cores = STAFF_DISPLAY_STATUSES.map(displayStatusColor)
+    expect(new Set(cores).size).toBe(STAFF_DISPLAY_STATUSES.length)
   })
 
-  it('"Revisão solicitada" (APROVADA revisada) usa laranja', () => {
-    expect(statusColorClass('APROVADA', true, false)).toBe('bg-orange-50 text-orange-700')
+  it('todo estado tem cor definida', () => {
+    for (const estado of STAFF_DISPLAY_STATUSES) {
+      expect(displayStatusColor(estado)).toBeTruthy()
+    }
   })
 
-  it('"Revisão enviada" (ENCAMINHADA revisada) usa ciano', () => {
-    expect(statusColorClass('ENCAMINHADA', true, false)).toBe('bg-cyan-50 text-cyan-700')
-  })
-})
-
-describe('statusColorClass — Operação', () => {
-  it('"Aberta" (ENCAMINHADA 1ª vez) usa a cor padrão de ENCAMINHADA', () => {
-    expect(statusColorClass('ENCAMINHADA', false, true)).toBe('bg-blue-50 text-blue-700')
+  it('concluída é verde e recusada é vermelha', () => {
+    expect(displayStatusColor('CONCLUIDA')).toContain('green')
+    expect(displayStatusColor('REPROVADA')).toContain('red')
   })
 
-  it('"Revisão realizada" (ENCAMINHADA revisada) usa ciano', () => {
-    expect(statusColorClass('ENCAMINHADA', true, true)).toBe('bg-cyan-50 text-cyan-700')
+  it('aprovada tem fundo preenchido, para saltar aos olhos', () => {
+    // Os demais estados usam tons claros (100); aprovada e concluída são sólidas.
+    expect(displayStatusColor('APROVADA')).toMatch(/bg-[a-z]+-(400|500|600|700)/)
   })
 
-  it('"Revisão solicitada" (APROVADA revisada) usa laranja', () => {
-    expect(statusColorClass('APROVADA', true, true)).toBe('bg-orange-50 text-orange-700')
+  it('revisão solicitada (esperando alguém agir) usa laranja', () => {
+    expect(statusColorClass('APROVADA', true, false)).toContain('orange')
+    expect(statusColorClass('APROVADA', true, true)).toContain('orange')
   })
 
-  it('demais status usam a cor padrão', () => {
-    expect(statusColorClass('APROVADA', false, true)).toBe('bg-emerald-50 text-emerald-700')
-    expect(statusColorClass('CONCLUIDA', true, true)).toBe('bg-green-100 text-green-700')
+  it('cor não muda por perfil — só o texto muda', () => {
+    for (const status of ['ENCAMINHADA', 'CONCLUIDA', 'APROVADA'] as const) {
+      expect(statusColorClass(status, false, true)).toBe(statusColorClass(status, false, false))
+    }
   })
 })
