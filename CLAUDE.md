@@ -10,7 +10,7 @@ O sistema substitui o processo atual de cotações por e-mail, centralizando tod
 
 - `especificacao_sistema_crm.md` — especificação completa com todos os campos, fluxos e regras de negócio
 - `PRD_crm_cotacoes.md` — PRD com 69 user stories, módulos, schema de dados e decisões técnicas
-- `issues/` — pasta com as 13 issues do projeto em ordem de dependência
+- `issues/` — pasta com as issues do projeto em ordem de dependência (01-13 é o MVP original; 14-28 é a fase 2, ver seção "Ordem de desenvolvimento")
 
 ## Stack
 
@@ -109,3 +109,21 @@ notifications { id, user_id, quotation_id, type, read, created_at }
 9. `issue-11` — Fluxo da operação
 10. `issue-13` — Dashboard e listas
 11. `issue-12` — Documentos do cliente — ⏸️ **EM ESPERA** (decisão da usuária em 31/07/2026; não implementar sem ela pedir)
+
+### Fase 2 (issues 14-28, criadas em 15/08/2026)
+
+12. `issue-14` — Bugfix: notificação de encerramento não chega ao comercial
+13. `issue-15` — Infraestrutura de textos padrão de e-mail configuráveis
+14. `issue-16` — Alerta de cotação sem retorno do cliente
+15. `issue-17` — Solicitar retorno ao cliente (depende de #15, #16)
+16. `issue-18` — Múltiplos clientes por cotação
+17. `issue-19` — Exportação: duas origens/destinos (dupla coleta)
+18. `issue-20` — Tabelas fixas (nova aba) — ⏸️ **HITL, aguardando modelos de tabela da usuária**
+19. `issue-21` — Módulo de Prospecções: schema, CRUD, status, observações
+20. `issue-22` — Envio de prospecções por e-mail (depende de #15, #21)
+21. `issue-23` — Dashboard e filtros da aba Prospecções (depende de #21)
+22. `issue-24` — Aba Clientes: visão 360º (depende de #20, #21)
+23. `issue-25` — Módulo de Aniversariantes (depende de #15)
+24. `issue-26` — Relatórios de Cotações por filtro
+25. `issue-27` — Relatórios de Prospecções por filtro (depende de #21, #23)
+26. `issue-28` — Relatórios de Tabelas por filtro (depende de #20)
