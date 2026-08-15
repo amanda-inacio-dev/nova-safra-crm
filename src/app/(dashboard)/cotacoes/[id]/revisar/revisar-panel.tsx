@@ -49,6 +49,8 @@ export function RevisarPdfPanel({
   clientEmails,
   ctes,
   isDtaDi,
+  initialAlertEnabled,
+  initialAlertDays,
 }: {
   quotationId: string
   status: QuotationStatus
@@ -66,6 +68,9 @@ export function RevisarPdfPanel({
   isDtaDi: boolean
   /** Contatos do cliente que podem receber a cotação (principal + adicionais). */
   clientEmails: ClientEmailOption[]
+  /** Alerta de "sem retorno" (issue #16) — o que já foi configurado no último envio. */
+  initialAlertEnabled: boolean
+  initialAlertDays: number | null
 }) {
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl)
   const [error, setError] = useState<string>()
@@ -78,6 +83,8 @@ export function RevisarPdfPanel({
   // desmarcar quem não deve receber é mais rápido do que marcar um por um.
   const [recipients, setRecipients] = useState<string[]>(() => clientEmails.map((c) => c.email))
   const [message, setMessage] = useState('')
+  const [alertEnabled, setAlertEnabled] = useState(initialAlertEnabled)
+  const [alertDays, setAlertDays] = useState(initialAlertDays ? String(initialAlertDays) : '7')
   const [signatureUrl, setSignatureUrl] = useState(initialSignatureUrl)
   const [signatureError, setSignatureError] = useState<string>()
   const [forwardOpen, setForwardOpen] = useState(false)
@@ -125,8 +132,19 @@ export function RevisarPdfPanel({
   function handleSend() {
     setError(undefined)
     setSendResult(undefined)
+    const parsedDays = Number(alertDays)
+    if (alertEnabled && (!Number.isInteger(parsedDays) || parsedDays <= 0)) {
+      setError('Informe um número de dias válido para o alerta de retorno.')
+      return
+    }
     startSending(async () => {
-      const res = await sendQuotationToClient(quotationId, message, recipients)
+      const res = await sendQuotationToClient(
+        quotationId,
+        message,
+        recipients,
+        alertEnabled,
+        alertEnabled ? parsedDays : null
+      )
       if (res.error) setError(res.error)
       else setSendResult({ url: res.url, warning: res.warning, sentTo: res.sentTo })
     })
@@ -307,6 +325,31 @@ export function RevisarPdfPanel({
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Ex.: Segue a cotação conforme conversamos, qualquer dúvida me chame."
                 />
+              </div>
+
+              <div className="flex flex-col gap-2 rounded-md border border-slate-200 bg-slate-50 p-3">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={alertEnabled}
+                    onChange={(e) => setAlertEnabled(e.target.checked)}
+                    className="accent-brand-700 h-4 w-4"
+                  />
+                  Receber alerta se o cliente não responder?
+                </label>
+                {alertEnabled && (
+                  <label className="flex items-center gap-2 text-sm text-slate-600">
+                    Avisar após
+                    <input
+                      type="number"
+                      min={1}
+                      value={alertDays}
+                      onChange={(e) => setAlertDays(e.target.value)}
+                      className="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm"
+                    />
+                    dias sem resposta
+                  </label>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">

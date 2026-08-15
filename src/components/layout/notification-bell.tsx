@@ -16,6 +16,7 @@ const NOTIFICATION_TEXT: Record<NotificationType, (code: string) => string> = {
   FORWARDED_TO_OPERATION: (code) => `Cotação ${code} recebida`,
   REVISION_REQUESTED: (code) => `Revisão solicitada na cotação ${code}`,
   QUOTATION_CLOSED: (code) => `Cotação ${code} concluída — CT-e anexado`,
+  NO_CLIENT_RESPONSE: (code) => `Cotação ${code} sem retorno do cliente`,
 }
 
 /** Sem infraestrutura de realtime no projeto ainda — um polling simples a cada

@@ -102,7 +102,11 @@ export async function sendQuotationToClient(
   quotationId: string,
   customMessage?: string,
   /** E-mails escolhidos na tela. Vazio = manda para todos os contatos do cliente. */
-  selectedEmails?: string[]
+  selectedEmails?: string[],
+  /** Alerta de "sem retorno" (issue #16) — se habilitado, dispara depois de
+   *  `alertDays` dias sem o cliente aprovar/reprovar/comentar. */
+  alertEnabled = false,
+  alertDays: number | null = null
 ): Promise<{ url?: string; warning?: string; error?: string; sentTo?: string[] }> {
   const profile = await requireRole(['ADMIN', 'COMMERCIAL'])
   const supabase = await createClient()
@@ -178,9 +182,18 @@ export async function sendQuotationToClient(
     if (tokenError) return { error: 'Não foi possível gerar o link do cliente.' }
   }
 
+  // O contador de dias do alerta de "sem retorno" (issue #16) reinicia a cada
+  // envio/reenvio, e o alerta já disparado é zerado — um novo envio merece
+  // um novo prazo, não a continuação do anterior.
   const { error: statusError } = await supabase
     .from('quotations')
-    .update({ status: 'AGUARDANDO_CLIENTE' })
+    .update({
+      status: 'AGUARDANDO_CLIENTE',
+      client_response_alert_enabled: alertEnabled,
+      client_response_alert_days: alertEnabled ? alertDays : null,
+      sent_to_client_at: new Date().toISOString(),
+      client_response_alert_sent_at: null,
+    })
     .eq('id', quotationId)
   if (statusError) return { error: 'Não foi possível atualizar o status da cotação.' }
 

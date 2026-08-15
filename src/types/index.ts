@@ -34,6 +34,7 @@ export type NotificationType =
   | 'FORWARDED_TO_OPERATION'
   | 'REVISION_REQUESTED'
   | 'QUOTATION_CLOSED'
+  | 'NO_CLIENT_RESPONSE'
 
 export type EmailTemplateKey =
   | 'client_followup_request'

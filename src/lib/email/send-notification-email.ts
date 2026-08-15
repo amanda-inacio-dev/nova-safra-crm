@@ -10,6 +10,7 @@ const EVENT_COLOR: Record<NotificationType, string> = {
   FORWARDED_TO_OPERATION: '#123822',
   REVISION_REQUESTED: '#c0392b',
   QUOTATION_CLOSED: '#3c8c5c',
+  NO_CLIENT_RESPONSE: '#c0392b',
 }
 
 const SUBJECT_TEXT: Record<NotificationType, (clientName: string) => string> = {
@@ -19,6 +20,7 @@ const SUBJECT_TEXT: Record<NotificationType, (clientName: string) => string> = {
   FORWARDED_TO_OPERATION: () => 'Cotação encaminhada para você',
   REVISION_REQUESTED: () => 'A Operação solicitou revisão da cotação',
   QUOTATION_CLOSED: () => 'Processo concluído — CT-e anexado da cotação',
+  NO_CLIENT_RESPONSE: () => 'Cliente ainda não respondeu a cotação',
 }
 
 function headline(params: {
@@ -41,6 +43,8 @@ function headline(params: {
       return `A Operação solicitou revisão da cotação <strong>${code}</strong>.`
     case 'QUOTATION_CLOSED':
       return `A Operação concluiu o processo da cotação <strong>${code}</strong> e anexou o CT-e.`
+    case 'NO_CLIENT_RESPONSE':
+      return `O cliente <strong>${client}</strong> ainda não respondeu a cotação <strong>${code}</strong>.`
   }
 }
 

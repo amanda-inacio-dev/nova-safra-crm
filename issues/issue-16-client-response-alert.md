@@ -11,13 +11,13 @@ Criar uma rotina agendada (Vercel Cron, execução diária) que verifica cotaç�
 
 ## Acceptance criteria
 
-- [ ] Migration: `quotations.client_response_alert_enabled` (boolean, default `false`), `client_response_alert_days` (int, nullable), `client_response_alert_sent_at` (timestamptz, nullable)
-- [ ] Checkbox "Receber alerta se o cliente não responder?" + campo de dias na tela/diálogo de envio ao cliente
-- [ ] Novo tipo de notificação `NO_CLIENT_RESPONSE` adicionado ao `check` da tabela `notifications` e ao `NotificationType` em `src/types/index.ts`
-- [ ] Rota de cron (ex.: `src/app/api/cron/client-response-alerts/route.ts`) protegida por segredo do Vercel Cron, executando diariamente e notificando cotações elegíveis, marcando `client_response_alert_sent_at` para não duplicar o alerta
-- [ ] Se o cliente responder (aprovar/reprovar/comentar) antes do prazo configurado, o alerta agendado não deve mais disparar
-- [ ] `vercel.json` com a configuração do cron job
-- [ ] Testes: cálculo de elegibilidade (data de envio + dias configurados vs. data atual) e não duplicação de alerta já enviado
+- [x] Migration: `quotations.client_response_alert_enabled`, `client_response_alert_days`, `sent_to_client_at`, `client_response_alert_sent_at`
+- [x] Checkbox "Receber alerta se o cliente não responder?" + campo de dias na tela de envio ao cliente
+- [x] Novo tipo de notificação `NO_CLIENT_RESPONSE` adicionado ao `check` da tabela `notifications` e ao `NotificationType` em `src/types/index.ts`
+- [x] Rota de cron (`src/app/api/cron/client-response-alerts/route.ts`) protegida por `CRON_SECRET`, executando diariamente e notificando cotações elegíveis, marcando `client_response_alert_sent_at` para não duplicar o alerta
+- [x] Se o cliente responder (aprovar/reprovar/comentar) antes do prazo configurado, o alerta agendado não deve mais disparar
+- [x] `vercel.json` com a configuração do cron job
+- [x] Testes: cálculo de elegibilidade (data de envio + dias configurados vs. data atual) e não duplicação de alerta já enviado
 
 ## Blocked by
 
