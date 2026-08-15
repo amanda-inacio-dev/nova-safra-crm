@@ -3,13 +3,13 @@
 import { useActionState } from 'react'
 import Image from 'next/image'
 import { updateEmailTemplate } from './email-templates-actions'
-import type { ConfigActionState } from './additionals-actions'
+import type { ConfigActionState } from '../configuracoes/additionals-actions'
 import type { EmailTemplateKey } from '@/types'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { FormMessage } from '@/components/ui/form-message'
-import { SaveButton } from './manager-bits'
+import { SaveButton } from '../configuracoes/manager-bits'
 
 export type EmailTemplateRow = {
   key: EmailTemplateKey
@@ -101,13 +101,6 @@ function TemplateForm({ item }: { item: EmailTemplateRow }) {
 export function EmailTemplatesManager({ items }: { items: EmailTemplateRow[] }) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white">
-      <div className="border-b border-slate-100 px-5 py-4">
-        <h2 className="text-base font-semibold text-slate-900">Textos padrão de e-mail</h2>
-        <p className="text-sm text-slate-500">
-          Editáveis a qualquer momento — quem for enviar pode ajustar o texto na hora, isso aqui é
-          só o ponto de partida.
-        </p>
-      </div>
       {items.map((item) => (
         <TemplateForm key={item.key} item={item} />
       ))}

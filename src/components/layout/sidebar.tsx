@@ -23,6 +23,7 @@ const NAV: NavItem[] = [
   { label: 'Clientes', href: '/clientes', roles: ['ADMIN', 'COMMERCIAL'] },
   { label: 'Usuários', href: '/admin/users', roles: ['ADMIN'] },
   { label: 'Configurações da Cotação', href: '/admin/configuracoes', roles: ['ADMIN'] },
+  { label: 'Textos Padrão', href: '/admin/textos-padrao', roles: ['ADMIN'] },
   // Configurações da própria conta (senha) — todo perfil tem.
   { label: 'Minha conta', href: '/configuracoes' },
 ]

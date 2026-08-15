@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/auth/require-role'
 import { createClient } from '@/lib/supabase/server'
 import { uploadImage } from '@/lib/storage/upload-image'
 import type { EmailTemplateKey } from '@/types'
-import type { ConfigActionState } from './additionals-actions'
+import type { ConfigActionState } from '../configuracoes/additionals-actions'
 
 const VALID_KEYS: EmailTemplateKey[] = [
   'client_followup_request',
@@ -40,6 +40,6 @@ export async function updateEmailTemplate(
   const { error } = await supabase.from('email_templates').update(update).eq('key', key)
   if (error) return { error: 'Não foi possível salvar o template.' }
 
-  revalidatePath('/admin/configuracoes')
+  revalidatePath('/admin/textos-padrao')
   return { ok: true }
 }

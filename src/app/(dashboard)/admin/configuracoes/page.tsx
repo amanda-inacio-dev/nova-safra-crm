@@ -6,18 +6,9 @@ import { PortsManager, type Port } from './ports-manager'
 import { CertificationsManager, type Certification } from './certifications-manager'
 import { SettingsForm, type AppSettings } from './settings-form'
 import { SimpleCatalogManager, type CatalogItem } from './simple-catalog-manager'
-import { EmailTemplatesManager, type EmailTemplateRow } from './email-templates-manager'
-import type { EmailTemplateKey } from '@/types'
 
 type SubtypeRow = Subtype & { additional_id: string }
 type PresetRow = { id: string; additional_id: string; text: string }
-
-const EMAIL_TEMPLATE_KEYS: EmailTemplateKey[] = [
-  'client_followup_request',
-  'prospection_industria',
-  'prospection_cafe',
-  'birthday_message',
-]
 
 export default async function AdminConfigPage() {
   await requireRole(['ADMIN'])
@@ -34,7 +25,6 @@ export default async function AdminConfigPage() {
     routeOrigins,
     routeDestinations,
     presets,
-    emailTemplates,
   ] = await Promise.all([
     supabase
       .from('additionals')
@@ -54,23 +44,10 @@ export default async function AdminConfigPage() {
     // Textos padrão de observação (migration 0030). Se ela ainda não foi
     // aplicada, a consulta falha e a tela abre sem os atalhos, sem quebrar.
     supabase.from('additional_presets').select('id, additional_id, text').order('created_at'),
-    // Textos padrão de e-mail (migration 0034). Mesmo raciocínio: se a
-    // migration ainda não rodou, a consulta falha e a seção abre vazia.
-    supabase.from('email_templates').select('key, subject, body, image_url'),
   ])
 
   const subtypeRows = (subtypes.data ?? []) as SubtypeRow[]
   const presetRows = (presets.data ?? []) as PresetRow[]
-  const emailTemplateRows = (emailTemplates.data ?? []) as EmailTemplateRow[]
-  const emailTemplateItems: EmailTemplateRow[] = EMAIL_TEMPLATE_KEYS.map(
-    (key) =>
-      emailTemplateRows.find((t) => t.key === key) ?? {
-        key,
-        subject: '',
-        body: '',
-        image_url: null,
-      }
-  )
   const additionalsWithSubtypes: Additional[] = (
     (additionals.data ?? []) as Omit<Additional, 'subtypes' | 'presets'>[]
   ).map((a) => ({
@@ -128,8 +105,6 @@ export default async function AdminConfigPage() {
         emptyLabel="Nenhum destino cadastrado."
         items={(routeDestinations.data ?? []) as CatalogItem[]}
       />
-
-      <EmailTemplatesManager items={emailTemplateItems} />
 
       <SettingsForm
         settings={(settings.data ?? { company_name: '', logo_url: null }) as AppSettings}
