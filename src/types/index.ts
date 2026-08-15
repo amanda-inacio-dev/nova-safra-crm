@@ -34,3 +34,9 @@ export type NotificationType =
   | 'FORWARDED_TO_OPERATION'
   | 'REVISION_REQUESTED'
   | 'QUOTATION_CLOSED'
+
+export type EmailTemplateKey =
+  | 'client_followup_request'
+  | 'prospection_industria'
+  | 'prospection_cafe'
+  | 'birthday_message'
