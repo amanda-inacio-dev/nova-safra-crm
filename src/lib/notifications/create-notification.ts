@@ -18,11 +18,22 @@ export async function notifyUser(params: {
     .select('active')
     .eq('id', params.userId)
     .maybeSingle()
-  if (!user?.active) return
+  if (!user?.active) {
+    console.warn(
+      `[notifyUser] pulado — usuário ${params.userId} inativo (tipo=${params.type}, cotação=${params.quotationId})`
+    )
+    return
+  }
 
-  await admin.from('notifications').insert({
+  const { error } = await admin.from('notifications').insert({
     user_id: params.userId,
     quotation_id: params.quotationId,
     type: params.type,
   })
+  if (error) {
+    console.error(
+      `[notifyUser] falha ao inserir notificação (tipo=${params.type}, usuário=${params.userId}, cotação=${params.quotationId}):`,
+      error
+    )
+  }
 }

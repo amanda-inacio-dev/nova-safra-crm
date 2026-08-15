@@ -277,29 +277,49 @@ export async function closeQuotation(
   })
 
   // Avisa o Comercial responsável — com o CT-e já anexado, direto no e-mail.
-  const admin = createAdminClient()
-  await notifyUser({ userId: quotation.created_by, quotationId, type: 'QUOTATION_CLOSED' })
-  const { data: creator } = await admin
-    .from('users')
-    .select('name, email, active')
-    .eq('id', quotation.created_by)
-    .maybeSingle()
-  if (creator?.active && creator.email) {
-    const { data: settings } = await admin
-      .from('app_settings')
-      .select('company_name')
-      .eq('id', 1)
-      .single()
-    await sendNotificationEmail({
-      to: creator.email,
-      recipientName: creator.name,
-      quotationCode: quotation.code ?? '',
-      companyName: settings?.company_name ?? 'Nova Safra Transportes',
-      type: 'QUOTATION_CLOSED',
-      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cotacoes/${quotationId}/revisar`,
-      // O botão do e-mail leva ao primeiro CT-e; os demais ficam na tela da cotação.
-      attachmentUrl: attached[0].file_url,
-    })
+  // Envolto em try/catch: a cotação já foi encerrada acima, então uma falha
+  // aqui (ex.: SUPABASE_SERVICE_ROLE_KEY ausente) não pode derrubar a Server
+  // Action inteira e mascarar o encerramento que já aconteceu — só logamos.
+  try {
+    const admin = createAdminClient()
+    await notifyUser({ userId: quotation.created_by, quotationId, type: 'QUOTATION_CLOSED' })
+    const { data: creator } = await admin
+      .from('users')
+      .select('name, email, active')
+      .eq('id', quotation.created_by)
+      .maybeSingle()
+    if (creator?.active && creator.email) {
+      const { data: settings } = await admin
+        .from('app_settings')
+        .select('company_name')
+        .eq('id', 1)
+        .single()
+      const { error: emailError } = await sendNotificationEmail({
+        to: creator.email,
+        recipientName: creator.name,
+        quotationCode: quotation.code ?? '',
+        companyName: settings?.company_name ?? 'Nova Safra Transportes',
+        type: 'QUOTATION_CLOSED',
+        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cotacoes/${quotationId}/revisar`,
+        // O botão do e-mail leva ao primeiro CT-e; os demais ficam na tela da cotação.
+        attachmentUrl: attached[0].file_url,
+      })
+      if (emailError) {
+        console.error(
+          `[closeQuotation] falha ao enviar e-mail de encerramento (cotação=${quotationId}):`,
+          emailError
+        )
+      }
+    } else {
+      console.warn(
+        `[closeQuotation] comercial ${quotation.created_by} sem e-mail ativo — e-mail de encerramento não enviado (cotação=${quotationId})`
+      )
+    }
+  } catch (notifyErr) {
+    console.error(
+      `[closeQuotation] falha ao notificar o comercial do encerramento (cotação=${quotationId}):`,
+      notifyErr
+    )
   }
 
   revalidatePath(`/cotacoes/${quotationId}/revisar`)
