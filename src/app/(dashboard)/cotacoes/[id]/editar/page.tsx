@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requireRole } from '@/lib/auth/require-role'
 import { createClient } from '@/lib/supabase/server'
 import { QuotationForm, type QuotationInitial } from '../../nova/quotation-form'
-import { emptyLeg, type LegRow, type LegGroup } from '../../nova/legs-editor'
+import { emptyLeg, type LegRow, type LegGroup } from '../../nova/leg-types'
 import { DeleteQuotationButton } from './delete-button'
 import type {
   ClientOption,

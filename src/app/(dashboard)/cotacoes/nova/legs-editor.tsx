@@ -5,37 +5,10 @@ import { CurrencyInput } from '@/components/ui/currency-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LegMarginSelector } from './leg-margin-selector'
-import type { QuotationAdditionalInput } from '../actions'
 import type { AdditionalOption, NameOption } from './types'
+import { emptyLeg, type LegGroup, type LegRow } from './leg-types'
 
-export type LegGroup = 'DTA' | 'DI' | ''
-
-export type LegRow = {
-  origin: string
-  destination: string
-  freightValue: string
-  freightIncluded: boolean
-  tollValue: string
-  tollIncluded: boolean
-  /** Alíquota de ICMS deste trecho (%) — cada trecho aplica a sua sobre a própria soma. */
-  icmsRate: string
-  /** Só usado quando a operação é DTA+DI, pra saber em qual bloco o trecho aparece. */
-  legGroup: LegGroup
-  /** Margens esquerda (Retirada/Entrega/Retirada e entrega) lançadas neste trecho. */
-  additionals: QuotationAdditionalInput[]
-}
-
-export const emptyLeg = (legGroup: LegGroup = ''): LegRow => ({
-  origin: '',
-  destination: '',
-  freightValue: '',
-  freightIncluded: true,
-  tollValue: '',
-  tollIncluded: true,
-  icmsRate: '',
-  legGroup,
-  additionals: [],
-})
+export { emptyLeg, type LegGroup, type LegRow }
 
 function LegCard({
   leg,
