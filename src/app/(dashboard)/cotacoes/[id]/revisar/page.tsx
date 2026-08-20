@@ -26,7 +26,7 @@ export default async function RevisarQuotationPage({
     supabase
       .from('quotations')
       .select(
-        'id, code, status, pdf_url, version, parent_id, cte_url, client_id, operation_type, operation_subtype, client_response_alert_enabled, client_response_alert_days, client:clients(name, contact_name, email)'
+        'id, code, status, pdf_url, version, parent_id, cte_url, client_id, operation_type, operation_subtype, client_response_alert_enabled, client_response_alert_days, client_response_alert_sent_at, client:clients(name, contact_name, email)'
       )
       .eq('id', id)
       .single(),
@@ -106,6 +106,7 @@ export default async function RevisarQuotationPage({
         isDtaDi={isDtaDi}
         initialAlertEnabled={data.client_response_alert_enabled ?? false}
         initialAlertDays={data.client_response_alert_days ?? null}
+        noResponseAlertSent={Boolean(data.client_response_alert_sent_at)}
       />
     </div>
   )

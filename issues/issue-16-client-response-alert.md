@@ -18,6 +18,12 @@ Criar uma rotina agendada (Vercel Cron, execução diária) que verifica cotaç�
 - [x] Se o cliente responder (aprovar/reprovar/comentar) antes do prazo configurado, o alerta agendado não deve mais disparar
 - [x] `vercel.json` com a configuração do cron job
 - [x] Testes: cálculo de elegibilidade (data de envio + dias configurados vs. data atual) e não duplicação de alerta já enviado
+- [x] Status visual "Sem retorno" na listagem de cotações (badge + filtro), sem alterar o status real no banco — mesmo padrão do "Comentada" (pedido extra da usuária após o teste)
+
+## Bugs encontrados e corrigidos durante o teste desta issue
+
+- `emptyLeg()` (função de um arquivo `'use client'`) era chamada direto de um Server Component ao editar uma cotação sem nenhum trecho salvo — quebrava a tela com erro 500. Movida para `src/app/(dashboard)/cotacoes/nova/leg-types.ts` (sem `'use client'`).
+- O middleware (`src/proxy.ts`) interceptava `/api/cron/*` e redirecionava pra `/login` antes mesmo de checar o `CRON_SECRET` — a rotina automática da Vercel Cron nunca teria funcionado. Rotas de API agora ficam fora do matcher do middleware.
 
 ## Blocked by
 

@@ -4,6 +4,7 @@ import {
   statusDisplayLabel,
   statusColorClass,
   displayStatusColor,
+  displayStatusKey,
   STAFF_DISPLAY_STATUSES,
 } from './status-label'
 
@@ -75,8 +76,26 @@ describe('statusDisplayLabel — Operação', () => {
   })
 })
 
+describe('displayStatusKey — "Sem retorno" (issue #16)', () => {
+  it('AGUARDANDO_CLIENTE com alerta disparado vira SEM_RETORNO', () => {
+    expect(displayStatusKey('AGUARDANDO_CLIENTE', false, false, true)).toBe('SEM_RETORNO')
+  })
+
+  it('um comentário pendente tem prioridade sobre o alerta disparado', () => {
+    expect(displayStatusKey('AGUARDANDO_CLIENTE', false, true, true)).toBe('COMENTADA')
+  })
+
+  it('sem o alerta disparado, continua AGUARDANDO_CLIENTE', () => {
+    expect(displayStatusKey('AGUARDANDO_CLIENTE', false, false, false)).toBe('AGUARDANDO_CLIENTE')
+  })
+
+  it('alerta disparado não afeta outros status', () => {
+    expect(displayStatusKey('APROVADA', false, false, true)).toBe('APROVADA')
+  })
+})
+
 describe('cores dos status', () => {
-  it('NENHUMA cor se repete entre os 10 estados', () => {
+  it('nenhuma cor se repete entre os estados', () => {
     const cores = STAFF_DISPLAY_STATUSES.map(displayStatusColor)
     expect(new Set(cores).size).toBe(STAFF_DISPLAY_STATUSES.length)
   })

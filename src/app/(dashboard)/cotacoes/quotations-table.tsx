@@ -77,6 +77,7 @@ export function QuotationsTable({
                     statusLabel={statusDisplayLabel(row.status, row.hasBeenRevised, forOperation)}
                     colorClass={statusColorClass(row.status, row.hasBeenRevised, forOperation)}
                     latestComment={row.latestComment}
+                    noResponseAlertSent={row.noResponseAlertSent}
                   />
                 </td>
                 <td className="px-4 py-3 text-sm whitespace-nowrap text-slate-600">

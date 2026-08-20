@@ -14,6 +14,7 @@ export type QuotationDisplayStatus =
   | 'PRONTA'
   | 'AGUARDANDO_CLIENTE'
   | 'COMENTADA'
+  | 'SEM_RETORNO'
   | 'APROVADA'
   | 'REVISAO_SOLICITADA'
   | 'REPROVADA'
@@ -37,6 +38,7 @@ const DISPLAY_LABEL: Record<QuotationDisplayStatus, string> = {
   PRONTA: STATUS_LABEL.PRONTA,
   AGUARDANDO_CLIENTE: STATUS_LABEL.AGUARDANDO_CLIENTE,
   COMENTADA: 'Comentada',
+  SEM_RETORNO: 'Sem retorno',
   APROVADA: STATUS_LABEL.APROVADA,
   REVISAO_SOLICITADA: 'Revisão solicitada',
   REPROVADA: STATUS_LABEL.REPROVADA,
@@ -71,6 +73,8 @@ const DISPLAY_COLOR: Record<QuotationDisplayStatus, string> = {
   AGUARDANDO_CLIENTE: 'bg-violet-100 text-violet-800',
   // Âmbar: o cliente falou algo, mas não decidiu.
   COMENTADA: 'bg-amber-100 text-amber-800',
+  // Rosa: passou do prazo configurado sem nenhum retorno do cliente.
+  SEM_RETORNO: 'bg-rose-100 text-rose-800',
   // Verde-limão preenchido: a notícia boa do fluxo, salta aos olhos.
   APROVADA: 'bg-lime-400 text-lime-950',
   // Laranja: alguém precisa agir.
@@ -91,6 +95,7 @@ export const STAFF_DISPLAY_STATUSES: QuotationDisplayStatus[] = [
   'PRONTA',
   'AGUARDANDO_CLIENTE',
   'COMENTADA',
+  'SEM_RETORNO',
   'APROVADA',
   'REVISAO_SOLICITADA',
   'REPROVADA',
@@ -117,15 +122,20 @@ export function hasRevisionEvent(events: { type: QuotationEventType }[]): boolea
  *
  * - Comentário do cliente só vira "Comentada" enquanto a cotação ainda aguarda
  *   a decisão dele — depois de aprovada, um comentário antigo não muda o estado.
+ * - "Sem retorno" (issue #16) aparece quando o alerta de prazo já disparou e o
+ *   cliente ainda não comentou nem decidiu — um comentário posterior tira esse
+ *   estado (o cliente voltou a dar sinal de vida, mesmo sem decidir ainda).
  * - Um ciclo de revisão da Operação desdobra APROVADA em "Revisão solicitada"
  *   (esperando o Comercial ajustar) e ENCAMINHADA em "Revisão enviada".
  */
 export function displayStatusKey(
   status: QuotationStatus,
   hasBeenRevised: boolean,
-  hasPendingComment = false
+  hasPendingComment = false,
+  hasNoResponseAlert = false
 ): QuotationDisplayStatus {
   if (status === 'AGUARDANDO_CLIENTE' && hasPendingComment) return 'COMENTADA'
+  if (status === 'AGUARDANDO_CLIENTE' && hasNoResponseAlert) return 'SEM_RETORNO'
   if (status === 'APROVADA' && hasBeenRevised) return 'REVISAO_SOLICITADA'
   if (status === 'ENCAMINHADA' && hasBeenRevised) return 'REVISAO_ENVIADA'
   return status

@@ -5,20 +5,34 @@ import { useState } from 'react'
 /**
  * Badge de status que sabe mostrar "Comentada" (quando o cliente já comentou mas
  * ainda não aprovou/reprovou formalmente) — clicável, revela o último comentário
- * num popover. Se não houver comentário pendente, é só o badge normal.
+ * num popover — e "Sem retorno" (quando o alerta de prazo já disparou, issue #16).
+ * Um comentário do cliente tem prioridade: se ele voltou a dar sinal de vida,
+ * isso importa mais do que o prazo ter estourado. Sem nenhum dos dois, é só o
+ * badge normal.
  */
 export function ClientResponseBadge({
   statusLabel,
   colorClass = 'bg-slate-100 text-slate-600',
   latestComment,
+  noResponseAlertSent = false,
 }: {
   statusLabel: string
   /** Classes Tailwind (bg + text) — cada status tem a própria cor, ver status-label.ts. */
   colorClass?: string
   /** Último comentário do cliente enquanto a cotação ainda está aguardando resposta. */
   latestComment: string | null
+  /** Alerta de "sem retorno" (issue #16) já disparado — cliente ainda não respondeu. */
+  noResponseAlertSent?: boolean
 }) {
   const [open, setOpen] = useState(false)
+
+  if (!latestComment && noResponseAlertSent) {
+    return (
+      <span className="inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800">
+        Sem retorno
+      </span>
+    )
+  }
 
   if (!latestComment) {
     return (

@@ -19,6 +19,7 @@ import type { QuotationStatus, QuotationEventType } from '@/types'
 const SELECT = `
   id, code, status, operation_type, vehicle_type, segment,
   sender, recipient, product, created_at, client_id, parent_id, version,
+  client_response_alert_sent_at,
   client:clients(name),
   owner:users!quotations_created_by_fkey(id, name),
   legs:quotation_legs(origin, destination, leg_order)
@@ -38,6 +39,8 @@ type RawRow = {
   client_id: string
   parent_id: string | null
   version: number
+  /** Alerta de "sem retorno" (issue #16) já disparado para essa cotação. */
+  client_response_alert_sent_at: string | null
   client: { name: string } | null
   owner: { id: string; name: string } | null
   legs: { origin: string | null; destination: string | null; leg_order: number }[] | null
@@ -65,6 +68,8 @@ export type QuotationListRow = {
   hasBeenRevised: boolean
   /** Último comentário do cliente, só enquanto ainda aguarda a decisão dele. */
   latestComment: string | null
+  /** Alerta de "sem retorno" (issue #16) já disparado, cliente ainda não respondeu. */
+  noResponseAlertSent: boolean
 }
 
 /** Origem do 1º trecho / destino do último, em ordem de `leg_order`. */
@@ -187,15 +192,21 @@ export async function loadQuotationList(
     // — senão um comentário antigo ficaria aparecendo depois de aprovada.
     latestComment:
       row.status === 'AGUARDANDO_CLIENTE' ? (latestCommentByQuotation.get(row.id) ?? null) : null,
+    noResponseAlertSent: Boolean(row.client_response_alert_sent_at),
   }))
 
-  // O filtro de status usa o estado EXIBIDO (Comentada, Revisão solicitada…),
-  // que só existe depois de cruzar a cotação com o histórico dela — por isso
-  // vem aqui no fim, e não na consulta ao banco.
+  // O filtro de status usa o estado EXIBIDO (Comentada, Sem retorno, Revisão
+  // solicitada…), que só existe depois de cruzar a cotação com o histórico
+  // dela — por isso vem aqui no fim, e não na consulta ao banco.
   if (filters.statuses.length === 0) return rows
   return rows.filter((row) =>
     filters.statuses.includes(
-      displayStatusKey(row.status, row.hasBeenRevised, Boolean(row.latestComment))
+      displayStatusKey(
+        row.status,
+        row.hasBeenRevised,
+        Boolean(row.latestComment),
+        row.noResponseAlertSent
+      )
     )
   )
 }

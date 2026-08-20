@@ -51,6 +51,7 @@ export function RevisarPdfPanel({
   isDtaDi,
   initialAlertEnabled,
   initialAlertDays,
+  noResponseAlertSent,
 }: {
   quotationId: string
   status: QuotationStatus
@@ -71,6 +72,8 @@ export function RevisarPdfPanel({
   /** Alerta de "sem retorno" (issue #16) — o que já foi configurado no último envio. */
   initialAlertEnabled: boolean
   initialAlertDays: number | null
+  /** Alerta de "sem retorno" (issue #16) já disparado — cliente ainda não respondeu. */
+  noResponseAlertSent: boolean
 }) {
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl)
   const [error, setError] = useState<string>()
@@ -179,6 +182,7 @@ export function RevisarPdfPanel({
             statusLabel={displayStatusLabel}
             colorClass={displayStatusColor}
             latestComment={latestComment}
+            noResponseAlertSent={noResponseAlertSent}
           />
         </div>
       ) : (
@@ -210,6 +214,7 @@ export function RevisarPdfPanel({
                   statusLabel={displayStatusLabel}
                   colorClass={displayStatusColor}
                   latestComment={latestComment}
+                  noResponseAlertSent={noResponseAlertSent}
                 />
                 {canForward && (
                   <Button onClick={() => setForwardOpen(true)} variant="secondary">
