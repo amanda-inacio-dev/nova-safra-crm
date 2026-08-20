@@ -26,6 +26,7 @@ export type QuotationEventType =
   | 'FORWARDED'
   | 'REVISION_REQUESTED'
   | 'CLOSED'
+  | 'FOLLOWUP_REQUESTED'
 
 export type NotificationType =
   | 'CLIENT_APPROVED'

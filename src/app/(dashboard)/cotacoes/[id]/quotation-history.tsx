@@ -31,6 +31,7 @@ const EVENT_LABEL: Record<QuotationEventType, string> = {
   FORWARDED: 'Encaminhada para a Operação',
   REVISION_REQUESTED: 'Revisão solicitada',
   CLOSED: 'Processo encerrado',
+  FOLLOWUP_REQUESTED: 'Retorno solicitado ao cliente',
 }
 
 const EVENT_BADGE_CLASS: Record<QuotationEventType, string> = {
@@ -40,6 +41,7 @@ const EVENT_BADGE_CLASS: Record<QuotationEventType, string> = {
   FORWARDED: 'bg-brand-50 text-brand-700',
   REVISION_REQUESTED: 'bg-amber-50 text-amber-700',
   CLOSED: 'bg-emerald-50 text-emerald-700',
+  FOLLOWUP_REQUESTED: 'bg-rose-50 text-rose-700',
 }
 
 /** Eventos que são resposta do CLIENTE — a Operação não deve enxergar. */

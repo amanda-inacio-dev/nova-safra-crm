@@ -15,6 +15,7 @@ import {
 import { createNewVersion } from '../version-actions'
 import { type OperationUser } from '../operation-actions'
 import { ForwardToOperationModal } from './forward-to-operation-modal'
+import { RequestFollowUpModal } from './request-followup-modal'
 import { OperationPanel } from './operation-panel'
 import { CteAttachments } from './cte-attachments'
 import type { CteAttachment } from '../operation-actions'
@@ -52,6 +53,7 @@ export function RevisarPdfPanel({
   initialAlertEnabled,
   initialAlertDays,
   noResponseAlertSent,
+  initialFollowUpMessage,
 }: {
   quotationId: string
   status: QuotationStatus
@@ -74,6 +76,8 @@ export function RevisarPdfPanel({
   initialAlertDays: number | null
   /** Alerta de "sem retorno" (issue #16) já disparado — cliente ainda não respondeu. */
   noResponseAlertSent: boolean
+  /** Texto padrão pré-carregado no modal de "Solicitar retorno" (issue #17). */
+  initialFollowUpMessage: string
 }) {
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl)
   const [error, setError] = useState<string>()
@@ -91,6 +95,7 @@ export function RevisarPdfPanel({
   const [signatureUrl, setSignatureUrl] = useState(initialSignatureUrl)
   const [signatureError, setSignatureError] = useState<string>()
   const [forwardOpen, setForwardOpen] = useState(false)
+  const [followUpOpen, setFollowUpOpen] = useState(false)
   const [showCtes, setShowCtes] = useState(false)
   const [generating, startGenerating] = useTransition()
   const [confirming, startConfirming] = useTransition()
@@ -108,6 +113,7 @@ export function RevisarPdfPanel({
   // intacta, então não há risco de perder nada ao criar.
   const canCreateNewVersion = true
   const canForward = status === 'APROVADA'
+  const canRequestFollowUp = status === 'AGUARDANDO_CLIENTE'
   const latestComment =
     status === 'AGUARDANDO_CLIENTE'
       ? (events.find((e) => e.type === 'COMMENTED')?.client_comment ?? null)
@@ -216,6 +222,11 @@ export function RevisarPdfPanel({
                   latestComment={latestComment}
                   noResponseAlertSent={noResponseAlertSent}
                 />
+                {canRequestFollowUp && (
+                  <Button onClick={() => setFollowUpOpen(true)} variant="secondary">
+                    Solicitar retorno
+                  </Button>
+                )}
                 {canForward && (
                   <Button onClick={() => setForwardOpen(true)} variant="secondary">
                     Encaminhar para Operação
@@ -239,6 +250,13 @@ export function RevisarPdfPanel({
             users={operationUsers}
             open={forwardOpen}
             onClose={() => setForwardOpen(false)}
+          />
+
+          <RequestFollowUpModal
+            quotationId={quotationId}
+            initialMessage={initialFollowUpMessage}
+            open={followUpOpen}
+            onClose={() => setFollowUpOpen(false)}
           />
 
           {status === 'CONCLUIDA' && (

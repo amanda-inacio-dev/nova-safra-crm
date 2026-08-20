@@ -9,6 +9,7 @@ import { getQuotationPdfData } from '@/lib/pdf/get-quotation-data'
 import { renderQuotationHtml } from '@/lib/pdf/template'
 import { htmlToPdfBuffer } from '@/lib/pdf/generate'
 import { sendQuotationEmail } from '@/lib/email/send-quotation-email'
+import { sendFollowUpEmail } from '@/lib/email/send-followup-email'
 import { clientEmailOptions } from '@/lib/quotation/client-emails'
 import { uploadImage } from '@/lib/storage/upload-image'
 
@@ -225,6 +226,81 @@ export async function sendQuotationToClient(
       sentTo: recipients,
     }
   return { url: portalUrl, sentTo: recipients }
+}
+
+/** Solicita retorno ao cliente (issue #17) — dispara enquanto a cotação ainda
+ *  aguarda a decisão dele, com o texto que o Comercial confirmou no modal
+ *  (editado ou o padrão do template `client_followup_request`). */
+export async function requestClientFollowUp(
+  quotationId: string,
+  message: string
+): Promise<{ error?: string }> {
+  const profile = await requireRole(['ADMIN', 'COMMERCIAL'])
+  const trimmed = message.trim()
+  if (!trimmed) return { error: 'Escreva uma mensagem antes de enviar.' }
+
+  const supabase = await createClient()
+  const { data: sender } = await supabase
+    .from('users')
+    .select('signature_url')
+    .eq('id', profile.id)
+    .single()
+
+  const { data: quotation } = await supabase
+    .from('quotations')
+    .select('id, code, status, client_token, client_id, client:clients(name, contact_name, email)')
+    .eq('id', quotationId)
+    .single()
+  if (!quotation) return { error: 'Cotação não encontrada.' }
+  if (quotation.status !== 'AGUARDANDO_CLIENTE') {
+    return { error: 'Só é possível solicitar retorno enquanto a cotação aguarda o cliente.' }
+  }
+  if (!quotation.client_token) return { error: 'Esta cotação ainda não foi enviada ao cliente.' }
+
+  const client = quotation.client as unknown as {
+    name: string
+    contact_name: string | null
+    email: string | null
+  } | null
+
+  const { data: contactsData } = await supabase
+    .from('client_contacts')
+    .select('name, email, role')
+    .eq('client_id', quotation.client_id)
+    .order('created_at')
+  const recipients = clientEmailOptions(client ?? {}, contactsData ?? []).map((o) => o.email)
+  if (recipients.length === 0) return { error: 'O cliente não tem e-mail cadastrado.' }
+
+  const { data: settings } = await supabase
+    .from('app_settings')
+    .select('company_name')
+    .eq('id', 1)
+    .single()
+  const companyName = settings?.company_name ?? 'Nova Safra Transportes'
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/cotacao/${quotation.client_token}`
+
+  const { error: emailError } = await sendFollowUpEmail({
+    to: recipients,
+    clientName: client?.name ?? 'cliente',
+    quotationCode: quotation.code ?? '',
+    companyName,
+    portalUrl,
+    message: trimmed,
+    senderName: profile.name,
+    signatureUrl: sender?.signature_url ?? null,
+  })
+  if (emailError) return { error: emailError }
+
+  await supabase.from('quotation_events').insert({
+    quotation_id: quotationId,
+    type: 'FOLLOWUP_REQUESTED',
+    actor_id: profile.id,
+    client_comment: trimmed,
+  })
+
+  revalidatePath(`/cotacoes/${quotationId}/revisar`)
+  revalidatePath(`/cotacoes/${quotationId}/historico`)
+  return {}
 }
 
 /** Salva a assinatura (imagem) do usuário logado — aparece no e-mail enviado ao

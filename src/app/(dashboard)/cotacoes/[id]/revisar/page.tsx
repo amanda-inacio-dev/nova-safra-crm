@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { RevisarPdfPanel, type QuotationEvent, type VersionSummary } from './revisar-panel'
 import { getOperationUsers, type CteAttachment } from '../operation-actions'
 import { clientEmailOptions, type ClientEmailOption } from '@/lib/quotation/client-emails'
+import { getEmailTemplate } from '@/lib/email-templates/get-template'
 import type { QuotationStatus } from '@/types'
 
 /**
@@ -79,6 +80,11 @@ export default async function RevisarQuotationPage({
     clientEmails = clientEmailOptions(client ?? {}, contactsData ?? [])
   }
 
+  // Texto padrão do modal "Solicitar retorno" (issue #17) — só faz sentido pra
+  // quem envia cotação, a Operação nem vê o botão.
+  const followUpTemplate =
+    profile.role !== 'OPERATION' ? await getEmailTemplate('client_followup_request') : null
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -107,6 +113,7 @@ export default async function RevisarQuotationPage({
         initialAlertEnabled={data.client_response_alert_enabled ?? false}
         initialAlertDays={data.client_response_alert_days ?? null}
         noResponseAlertSent={Boolean(data.client_response_alert_sent_at)}
+        initialFollowUpMessage={followUpTemplate?.body ?? ''}
       />
     </div>
   )
