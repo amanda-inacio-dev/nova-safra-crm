@@ -148,6 +148,14 @@ export async function sendNotificationEmail(params: {
     html: buildNotificationHtml(params),
   })
 
-  if (error) return { error: 'Não foi possível enviar o e-mail de notificação.' }
+  if (error) {
+    // O retorno é genérico, mas o log guarda o motivo real do Resend
+    // (ex.: remetente de teste só envia para o dono da conta).
+    console.error(
+      `[sendNotificationEmail] Resend recusou o envio (tipo=${params.type}, cotação=${params.quotationCode}):`,
+      error
+    )
+    return { error: 'Não foi possível enviar o e-mail de notificação.' }
+  }
   return {}
 }

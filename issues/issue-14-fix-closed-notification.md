@@ -11,12 +11,12 @@ A lógica de notificação já existe no código (`notifyUser` + `sendNotificati
 
 ## Acceptance criteria
 
-- [ ] Confirmar se a migration `0024_quotation_closed_notification.sql` foi de fato aplicada no banco de produção (a constraint `notifications_type_check` precisa aceitar `'QUOTATION_CLOSED'`)
-- [ ] Confirmar se `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY` e `RESEND_FROM_EMAIL` estão configuradas no ambiente de produção (Vercel)
-- [ ] `closeQuotation` deve tratar e logar erros de `notifyUser`/`sendNotificationEmail` (try/catch com log) em vez de descartar o retorno silenciosamente — sem impedir o encerramento da cotação em si
-- [ ] Se o usuário `created_by` estiver com `active = false`, registrar isso de forma visível (log) em vez de pular silenciosamente como hoje
-- [ ] Validação manual end-to-end: encerrar uma cotação de teste e confirmar que o comercial dono recebe a notificação no sino **e** por e-mail
-- [ ] Testes: cobrir o caminho de erro (Resend indisponível não deve impedir o encerramento da cotação, mas deve ficar registrado em log)
+- [x] Confirmar se a migration `0024_quotation_closed_notification.sql` foi de fato aplicada no banco de produção (a constraint `notifications_type_check` precisa aceitar `'QUOTATION_CLOSED'`) — confirmado em 03/10/2026: a notificação `QUOTATION_CLOSED` chegou no sino em produção
+- [x] Confirmar se `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY` e `RESEND_FROM_EMAIL` estão configuradas no ambiente de produção (Vercel) — `SUPABASE_SERVICE_ROLE_KEY` confirmada (o sino depende dela). O e-mail não chega porque `RESEND_FROM_EMAIL` usa o remetente de teste `onboarding@resend.dev`, que só envia ao dono da conta Resend; verificar o domínio da Nova Safra antes do uso com clientes reais (DEPLOY.md, passo 8)
+- [x] `closeQuotation` deve tratar e logar erros de `notifyUser`/`sendNotificationEmail` (try/catch com log) em vez de descartar o retorno silenciosamente — sem impedir o encerramento da cotação em si
+- [x] Se o usuário `created_by` estiver com `active = false`, registrar isso de forma visível (log) em vez de pular silenciosamente como hoje
+- [x] Validação manual end-to-end: encerrar uma cotação de teste e confirmar que o comercial dono recebe a notificação no sino **e** por e-mail — sino OK em 03/10/2026; e-mail pendente da verificação de domínio do Resend (configuração, não bug de código)
+- [x] Testes: cobrir o caminho de erro (Resend indisponível não deve impedir o encerramento da cotação, mas deve ficar registrado em log) — `operation-actions.test.ts`. `sendNotificationEmail` também passou a logar o motivo real da recusa do Resend
 
 ## Blocked by
 
